@@ -4,13 +4,23 @@ import shutil
 import random
 import numpy as np
 import itertools
+import pickle
 import cv2
+import utils
+from PIL import Image
+
+import torch
+import torchnet as tnt
+from torchvision import transforms
+
+from DataLoader import EpisodeLoader
 
 sys.path.append('../')
 
 _ROOT_DIR = '../datasets/omniglot/data'
 
-def rename_folder(root_dir='../datasets/omniglot/python/images_background', des_dir='../datasets/omniglot/train_data'):
+def rename_folder(root_dir='../datasets/omniglot/python/images_background',
+                  des_dir='../datasets/omniglot/train_data'):
     cnt = 1
     root_dir2 = des_dir 
     for sub_dir in os.listdir(root_dir):
@@ -25,84 +35,88 @@ def rename_folder(root_dir='../datasets/omniglot/python/images_background', des_
                     img_np = np.rot90(img_np)
                     temp = folder_path+'_'+str(direction)
                     if not os.path.exists(temp):
-                        os.mkdir(temp)
+                        os.makedirs(temp)
                     cv2.imwrite(os.path.join(temp, str(cnt)+'.png'), img_np)
                     cnt += 1
 
-def test_one_shot(root_dir, net, ctx):
-    avg_acc = 0
-    for running in os.listdir(root_dir):
-        cur_dir = os.path.join(root_dir, running)
-        f = open(os.path.join(cur_dir, 'class_labels.txt'), 'r')
-        cls_id = 1
-        img_map = {}
-        train_img_list = []
-        test_img_list = []
-        for line in f.readlines():
-            line = line.strip('\n')
-            test_file, train_file = line.split(' ')
-            img_map[train_file] = cls_id
-            img_map[test_file] = cls_id
-            train_img_list.append(train_file)
-            test_img_list.append(test_file)
-            cls_id += 1
-        train_loader = Function.get_class_loader(root_dir, train_img_list, img_map, (28, 28))
-        test_loader = Function.get_class_loader(root_dir, test_img_list, img_map, (28, 28))
-        ProtoNet.attach_labels(net, train_loader, ctx)
-        label, acc = ProtoNet.predict(net, test_loader, ctx)
-        avg_acc += acc
-        print('%s: %4f' % (running, acc))
-    print('avg: %4f' % (avg_acc / 20))
+def img_list2numpy(img_list, img_size):
+    assert(len(img_size) == 2)
+    res = []
+    for img_path in img_list:
+        img = Image.open(img_path)
+        img = img.convert('L')
+        img = img.resize((28,28), resample=Image.LANCZOS) # per Chelsea's implementation
+        img_np = np.array(img, dtype='float32')
+        img_np = np.expand_dims(img_np, 2)
+        # im = im.resize((84, 84), resample=Image.LANCZOS)
+        # img_np = np.array(im)
+        # img_np = cv2.imread(img_path)
+        # img_np = resize_short(img_np, img_size)
+        # img_np = np.expand_dims(img_np, 0)
+        res.append(img_np)
+    res = np.stack(res, axis=0)
+    return res
 
-def get_episode_loader(nc, ns, nq):
-    root_dir = '../datasets/omniglot/data'
-    return Function.get_episode_lodaer_v2(root_dir, (28, 28), nc, ns, nq, num_workers=0)
+def gen_train_test_pickle():
+    ROOT_DIR = '../datasets/omniglot/all_data'
+    _, _, img_dirs, _, _ = utils.get_img_map(ROOT_DIR)
+    random.shuffle(img_dirs)
+    img_train_dirs = img_dirs[:1200]
+    img_lists, cats = [], []
+    cat_cnt = 0
+    for train_dir in img_train_dirs:
+        path1 = os.path.join(ROOT_DIR, train_dir)
+        for img_path in os.listdir(path1):
+            img_lists.append(os.path.join(path1, img_path))
+            cats.append(cat_cnt)
+        cat_cnt += 1
 
-def choices(seq, nc):
-    return random.choices(seq, k=nc)
-    lis = list(range(len(seq)))
-    lis = itertools.repeat(seq)
-    random.shuffle(lis)
-    return [seq[x] for x in lis[:nc]]
+    cat_cnt = 0
+    img_test_dirs = img_dirs[1200:]
+    img_test_lists, test_cats = [], []
+    for test_dir in img_test_dirs:
+        path1 = os.path.join(ROOT_DIR, test_dir)
+        for img_path in os.listdir(path1):
+            img_test_lists.append(os.path.join(path1, img_path))
+            test_cats.append(cat_cnt)
+        cat_cnt += 1
 
+    train_data = img_list2numpy(img_lists, (28, 28))
+    pickle.dump((train_data, cats), open('../datasets/omniglot/train_split.pkl', 'wb'))
 
-def get_episode(nc, ns, nq, ctx_num=1, is_train=True):
-    ctx_pathes = []
+    test_data = img_list2numpy(img_test_lists, (28, 28))
+    pickle.dump((test_data, test_cats), open('../datasets/omniglot/test_split.pkl', 'wb'))
 
-    for ctx_id in range(ctx_num):
-        classes = choices(list(cls2img_path.keys()), nc)
-        s_pathes = []
-        q_pathes = []
-        for cls in classes:
-            samples_num = len(cls2img_path[cls])
-            train_num = min(int(samples_num * 0.8), samples_num-1)
-            test_num = samples_num - train_num
+class OmniglotDataset:
+    """
+    Return a Omniglot dataset object
+    """
+    def __init__(self, is_train=True):
+        data_path = '../datasets/omniglot/train_split.pkl' if is_train \
+            else '../datasets/omniglot/test_split.pkl'
 
-            list_a = cls2img_path[cls][:train_num] if is_train else cls2img_path[cls][train_num:]
-            path_s = choices(list_a, ns)
-            list_b = list(set(list_a).difference(set(path_s)))
-            path_q = choices(list_b, nq)
+        data, labels = pickle.load(open(data_path, 'rb'))
+        aug_data = np.zeros((data.shape[0] * 4, data.shape[1], data.shape[2], data.shape[3]))
+        aug_labels = [0] * (len(labels) * 4)
+        for i in range(len(data)):
+            for dire in range(4):
+                aug_data[i * 4 + dire] = np.rot90(data[i], k=dire, axes=(0, 1)).copy()
+                aug_labels[i * 4 + dire] = labels[i] * 4 + dire
 
-            s_pathes += path_s
-            q_pathes += path_q
-        ctx_pathes += s_pathes + q_pathes
-    dataset = Function.ClassDataset(root_dir, ctx_pathes, img_path2cls, (28, 28))
-    data, cls_id = next(iter(DataLoader(dataset, nc * (ns+nq) * ctx_num, num_workers=10,
-                                        pin_memory=True)))
-    return data, cls_id
+        self.data = aug_data
+        self.labels = aug_labels
 
+        trans_list = [transforms.ToTensor()]
+        self.transform = transforms.Compose(trans_list)
+        self.is_train = is_train
 
+    def __getitem__(self, index):
+        return self.transform(self.data[index]), self.labels[index]
+
+    def __len__(self):
+        return self.data.shape[0]
 
 if __name__ == '__main__':
-    rename_folder()
+    # gen_train_test_pickle()
+    train_dataset = OmniglotDataset(is_train=True)
 
-    """
-    ctx_id = 0
-    ctx=mx.gpu(ctx_id)
-
-    root_dir = '../datasets/omniglot/data'
-    img_map, reverse_map, img_list, cls_map, cls_reverse_map = Function.get_img_map(root_dir)
-    nc = 10
-    ns = 2
-    nq = 2
-    """
