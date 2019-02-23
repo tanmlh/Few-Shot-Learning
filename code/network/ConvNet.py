@@ -26,6 +26,58 @@ class ConvBlock(nn.Module):
         out = self.layers(x)
         return out
 
+def conv3x3(in_planes, out_planes, stride=1):
+    """3x3 convolution with padding"""
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
+                 padding=1, bias=False)
+
+
+def conv1x1(in_planes, out_planes, stride=1):
+    """1x1 convolution"""
+    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
+
+class BasicBlock(nn.Module):
+    expansion = 1
+
+    def __init__(self, inplanes, planes, stride=1):
+        super(BasicBlock, self).__init__()
+        self.conv0 = conv1x1(inplanes, planes, stride)
+
+        self.conv1 = conv3x3(inplanes, planes, 1)
+        self.bn1 = nn.BatchNorm2d(planes)
+
+        self.conv2 = conv3x3(planes, planes, 1)
+        self.bn2 = nn.BatchNorm2d(planes)
+
+        self.conv3 = conv3x3(planes, planes, stride)
+        self.bn3 = nn.BatchNorm2d(planes)
+
+        self.relu = nn.ReLU()
+        self.max_pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+        self.dropout = nn.Dropout(0.9)
+
+    def forward(self, x):
+        identity = self.conv0(x)
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
+
+        # out = self.conv3(out)
+        # out = self.bn3(out)
+        # out = self.relu(out)
+
+        out += identity
+        out = self.max_pool(out)
+        # out = self.dropout(out)
+
+        return out
+
+
 class ConvNet(nn.Module):
     def __init__(self, opt):
         super(ConvNet, self).__init__()
@@ -46,13 +98,13 @@ class ConvNet(nn.Module):
         for i in range(self.num_stages):
             if i == (self.num_stages-1):
                 conv_blocks.append(
-                    ConvBlock(num_planes[i], num_planes[i+1], userelu=userelu))
+                    BasicBlock(num_planes[i], num_planes[i+1]))
             else:
                 conv_blocks.append(
-                    ConvBlock(num_planes[i], num_planes[i+1]))
+                    BasicBlock(num_planes[i], num_planes[i+1]))
         self.conv_blocks = nn.Sequential(*conv_blocks)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(num_planes[-1], self.num_classes)
+        self.fc = nn.Linear(num_planes[-1] * 6 * 6, self.num_classes)
         self.relu = nn.ReLU()
         self.initialization()
 
@@ -68,7 +120,7 @@ class ConvNet(nn.Module):
 
     def forward(self, x):
         x = self.conv_blocks(x)
-        feature = self.avgpool(x).view(x.size(0), -1)
+        feature = x.view(x.size(0), -1)
         class_prob = self.fc(feature)
         # class_prob = self.relu(class_prob)
 

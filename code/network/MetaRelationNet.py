@@ -5,7 +5,9 @@ import torch.nn.functional as F
 
 sys.path.append('./network')
 import FeatureModel
+import ConvNet
 import ResNet
+import WideResNet
 from BaseModule import BaseModule
 
 
@@ -37,6 +39,7 @@ class MetaRelationSolver(Solver):
         tensors['support_labels_one_hot'] = torch.FloatTensor()
         tensors['query_data'] = torch.FloatTensor()
         tensors['query_labels'] = torch.LongTensor()
+        tensors['query_labels_real'] = torch.LongTensor()
         tensors['all_ones'] = torch.FloatTensor()
         self.tensors = tensors
 
@@ -44,22 +47,23 @@ class MetaRelationSolver(Solver):
         """
         Set all the tensors that will be used in network computation.
         """
-        support_data, support_labels, query_data, query_labels, class_ids = batch
+        support_data, support_labels, query_data, query_labels, query_labels_real = batch
         batch_size = support_data.size(0)
         num_support = support_data.size(1)
         num_query = query_data.size(1)
-        num_class = class_ids.size(1)
+        num_class = query_labels.max().item() + 1
 
         self.tensors['support_data'].resize_(support_data.size()).copy_(support_data)
         self.tensors['support_labels'].resize_(support_labels.size()).copy_(support_labels)
         self.tensors['query_data'].resize_(query_data.size()).copy_(query_data)
         self.tensors['query_labels'].resize_(query_labels.size()).copy_(query_labels)
+        self.tensors['query_labels_real'].resize_(query_labels_real.size()).copy_(query_labels_real)
 
         self.tensors['all_ones'].resize_(batch_size, num_query * num_class *
                                          num_class).fill_(1).to(support_data.device)
 
         # one hot labels for support data
-        one_hot_size = list(support_labels.size()) + [class_ids.size()[1],]
+        one_hot_size = list(support_labels.size()) + [num_class,]
         labels_unsqueeze = self.tensors['support_labels'].unsqueeze(support_labels.dim())
         self.tensors['support_labels_one_hot'].resize_(one_hot_size). \
             fill_(0).scatter_(support_labels.dim(), labels_unsqueeze, 1)
@@ -86,28 +90,35 @@ class MetaRelationSolver(Solver):
         cur_state['loss'] = out['loss'].item()
         cur_state['accuracy'] = out['accuracy']
         cur_state['accuracy_meta'] = out['accuracy_meta']
+        cur_state['accuracy_classification'] = out['accuracy_classification']
         return cur_state
 
     def print_state(self, state, epoch, is_train):
         if is_train:
-            print('Training   epoch %d   --> accuracy: %f | accuracy_meta: %f' % (epoch,
-                                                                                      state['accuracy'],
-                                                                                      state['accuracy_meta']))
+            print('Train %d   --> acc: %f | acc_meta: %f | acc_class %f' % (epoch,
+                                                                            state['accuracy'],
+                                                                            state['accuracy_meta'],
+                                                                            state['accuracy_classification']))
 
         else:
-            print('Evaluating epoch %d --> accuracy: %f | accuracy_meta: %f' % (epoch,
-                                                                                    state['accuracy'],
-                                                                                    state['accuracy_meta']))
+            print('Eval %d --> acc: %f | acc_meta: %f | acc_class %f' % (epoch,
+                                                                         state['accuracy'],
+                                                                         state['accuracy_meta'],
+                                                                         state['accuracy_classification']))
 
 class MetaRelationModule(BaseModule):
     def __init__(self, opt, *args):
         super(MetaRelationModule, self).__init__(*args)
         self.opt = opt
         self.net = {}
-        if self.opt['feature']['net_name'] == 'FourBlocks':
-            self.net['feature'] = FeatureModel.create_model(opt['feature'])
-        else:
+        if self.opt['feature']['net_name'] == 'ConvNet':
+            self.net['feature'] = ConvNet.create_model(opt['feature'])
+        elif self.opt['feature']['net_name'] == 'ResNet':
             self.net['feature'] = ResNet.create_model(opt['feature'])
+        elif self.opt['feature']['net_name'] == 'WideResNet':
+            self.net['feature'] = WideResNet.create_model(opt['feature'])
+        else:
+            raise NotImplementedError
         self.net['relation'] = RelationNet(opt['relation'])
         if opt['use_meta_relation'] is True:
             self.net['meta_relation'] = MetaRelationNet(opt['meta_relation'])
@@ -123,17 +134,24 @@ class MetaRelationModule(BaseModule):
         support_labels = tensors['support_labels']
         query_data = tensors['query_data'] # bs * num_query * C * H * W
         query_labels = tensors['query_labels']
+        query_labels_real = tensors['query_labels_real']
 
 
         ## Feature calculation ##
         batch_size, num_support, channel, height, weight = support_data.size()
         # bs * (num_class * num_shot) * num_feature
-        support_features = self.net['feature'](support_data.view(batch_size*num_support, channel, height, weight))
+        support_features = self.net['feature'](support_data.view(batch_size*num_support, channel,
+                                                                 height, weight))['feature']
         support_features = support_features.view(batch_size, num_support, -1)
 
         batch_size, num_query, channel, height, weight = query_data.size()
         # bs * num_query * num_feature
-        query_features = self.net['feature'](query_data.view(batch_size*num_query, channel, height, weight))
+        out = self.net['feature'](query_data.view(batch_size*num_query, channel, height, weight),
+                                  query_labels_real.view(batch_size*num_query,))
+        query_features = out['feature']
+        loss_classification = out['loss']
+        accuracy_classification = out['accuracy']
+
         query_features = query_features.view(batch_size, num_query, -1)
 
         ## Relation calculation ##
@@ -143,6 +161,17 @@ class MetaRelationModule(BaseModule):
         ## Meta-relation calculation ##
         # bs * num_query * num_class
         out = self.net['meta_relation'](relation_features, tensors)
+        out['loss_classification'] = loss_classification
+        ratio = self.opt['meta_relation']['ratio']
+
+        out['loss'] = (out['loss_relation'] * ratio[0]
+                       + out['loss_symetry'] * ratio[1]
+                       + out['loss_meta_relation'] * ratio[2]
+                       + out['loss_classification'] * ratio[3]) / sum(ratio)
+
+        # out['loss'] = out['loss_classification']
+
+        out['accuracy_classification'] = accuracy_classification
 
         return out
     """
@@ -163,15 +192,14 @@ class RelationNet(torch.nn.Module):
         num_features = opt['num_features']
         self.conv_layers = torch.nn.Sequential()
         for i in range(len(num_features)-1):
-            self.conv_layers.add_module('conv_{}'.format(i),
+            self.conv_layers.add_module('rela_conv_{}'.format(i),
                                         nn.Conv1d(num_features[i], num_features[i+1], 1, 1))
-            self.conv_layers.add_module('bn_{}'.format(i),
+            self.conv_layers.add_module('rela_bn_{}'.format(i),
                                         nn.BatchNorm1d(num_features[i+1]))
-            self.conv_layers.add_module('relu_{}'.format(i),
+            self.conv_layers.add_module('rela_relu_{}'.format(i),
                                         nn.ReLU(True))
         self.opt = opt
         self.initialization()
-
 
     def forward(self, support_features, query_features, tensors):
         """ Size inference """
@@ -265,6 +293,7 @@ class MetaRelationNet(nn.Module):
         self.conv_layers2.add_module('conv', nn.Conv1d(num_features[0]/2, 1, 1, 1))
         self.conv_layers2.add_module('sigmoid', nn.Sigmoid())
 
+
     def forward(self, relations, tensors):
 
         """ Extract the tensors to be used"""
@@ -317,18 +346,23 @@ class MetaRelationNet(nn.Module):
         # class_prob = torch.bmm(meta_relation, support_labels_one_hot)
         class_prob = class_prob.view(batch_size * num_query, -1)
 
-        """ Calculate loss w.r.t meta-relation"""
+        """ Calculate loss w.r.t. meta-relation"""
         loss2 = mse_loss(sum_meta_relation, all_ones)
         loss3 = ce_loss(class_prob, query_labels)
 
         accuracy = (class_prob.argmax(dim=1) == query_labels).sum().item() / (1.0 * batch_size * num_query)
 
+        """ Calculate loss w.r.t. overall classification"""
+
         """ Result processing"""
         opt = self.opt
         out = {}
-        out['loss'] = (loss1 * opt['ratio'][0]
-                       + loss2 * opt['ratio'][1]
-                       + loss3 * opt['ratio'][2]) / (sum(opt['ratio']))
+        # out['loss'] = (loss1 * opt['ratio'][0]
+        #                + loss2 * opt['ratio'][1]
+        #                + loss3 * opt['ratio'][2]) / (sum(opt['ratio']))
+        out['loss_relation'] = loss1
+        out['loss_symetry'] = loss2
+        out['loss_meta_relation'] = loss3
         out['accuracy'] = accuracy1
         out['accuracy_meta'] = accuracy
 

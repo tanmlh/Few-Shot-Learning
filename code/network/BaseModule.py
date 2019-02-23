@@ -28,7 +28,8 @@ class BaseModule(torch.nn.Module):
 
     def step(self):
         for key, value in self.optimizer.items():
-            value.step()
+            if 'block' not in self.opt[key] or self.opt[key]['block'] is False:
+                value.step()
 
     def adjust_lr(self, cur_epoch):
         if 'LUT_lr' in self.opt:
@@ -42,7 +43,7 @@ class BaseModule(torch.nn.Module):
         else:
             decay_epoch = self.opt['lr_decay_epoch']
             decay_ratio = self.opt['decay_ratio'] if 'decay_ratio' in self.opt else 0.5
-            if (cur_epoch + 1) % decay_epoch == 0:
+            if cur_epoch != 1 and (cur_epoch-1) % decay_epoch == 0:
                 for name, optimizer in self.optimizer.items():
                     for param_group in optimizer.param_groups:
                         print('learning rate for %s changes to %f' % (name, param_group['lr'] *
@@ -71,3 +72,11 @@ class BaseModule(torch.nn.Module):
         for key, value in state['optimizer'].items():
             self.optimizer[key] = value
 
+    def parameters(self):
+        return self.parameters()
+
+    def state_dict(self):
+        return self.state_dict()
+
+    def load_state_dict(self, state):
+        pass

@@ -7,7 +7,7 @@ import pickle
 from Omniglot import OmniglotDataset
 from MiniImageNet import MiniImageNetDataset
 from dataloader import MiniImageNet
-from DataLoader import EpisodeLoader, get_loader
+from DataLoader import BatchLoader
 
 sys.path.append('./network/')
 
@@ -22,11 +22,7 @@ if __name__ == '__main__':
     ## Extract the parameters ##
     solver_path = conf_module.solver_path
     solver_conf = conf_module.conf
-    train_episode_param = conf_module.train_episode_param
-    test_episode_param = conf_module.test_episode_param
-    train_batch_size = conf_module.train_batch_size
-    test_batch_size = conf_module.test_batch_size
-    epoch_size = conf_module.epoch_size
+    batch_size = conf_module.batch_size
 
     ## Create a solver ##
     # solver = imp.load_source('', solver_path).get_solver(solver_conf)
@@ -34,19 +30,12 @@ if __name__ == '__main__':
 
     ## Prepare the datasets ##
 
-    if solver_conf['dataset'] == 'omniglot':
-        train_dataset = OmniglotDataset(is_train=True)
-        test_dataset = OmniglotDataset(is_train=False)
-    else:
-        train_dataset = MiniImageNetDataset(phase='train')
-        test_dataset = MiniImageNetDataset(phase='test')
+    train_dataset = MiniImageNetDataset(phase='pretrain_train')
+    test_dataset = MiniImageNetDataset(phase='pretrain_val')
 
     ## Create the data loader ##
-    train_loader = EpisodeLoader(train_dataset, train_episode_param, train_batch_size,
-                                 num_workers=6, epoch_size=epoch_size)
-    test_loader = EpisodeLoader(test_dataset, test_episode_param, test_batch_size, num_workers=6,
-                                epoch_size=epoch_size)
-    # temp = next(iter(train_loader(0)))
+    train_loader = BatchLoader(train_dataset, batch_size, num_workers=6)
+    test_loader = BatchLoader(test_dataset, batch_size, num_workers=6)
 
     # train_loader = get_loader(train_dataset)
     # test_loader = get_loader(test_dataset)

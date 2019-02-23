@@ -40,8 +40,7 @@ if __name__ == '__main__':
 
 
     ## Create the data loader ##
-    test_loader = EpisodeLoader(test_dataset, test_episode_param, test_batch_size, num_workers=6,
-                                epoch_size=10000)
+    test_loader = EpisodeLoader(test_dataset, test_episode_param, test_batch_size, num_workers=6, epoch_size=2000)
 
     ## Test networks ##
     test_state = solver.test(test_loader)

@@ -65,6 +65,7 @@ class EpisodeLoader(object):
             sup_examps, que_examps, cats = self.sample_episode()
             sup_data, sup_labels = self.idx2tensor(sup_examps)
             que_data, que_labels = self.idx2tensor(que_examps)
+            cats = [cats[i] for i in que_labels]
             cats = torch.LongTensor(cats)
             return sup_data, sup_labels, que_data, que_labels, cats
 
@@ -79,6 +80,31 @@ class EpisodeLoader(object):
 
     def __len__(self):
         return self.epoch_size / self.batch_size
+
+class BatchLoader(object):
+
+    def __init__(self, dataset, batch_size, num_workers):
+
+        self.length = len(dataset)
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.dataset = dataset
+
+
+    def get_loader(self):
+
+        def load_func(idx):
+            return self.dataset[idx]
+
+        tnt_dataset = tnt.dataset.ListDataset(range(self.length), load_func)
+        data_loader = tnt_dataset.parallel(batch_size=self.batch_size,
+                                           num_workers=self.num_workers,
+                                           shuffle=True)
+        self.data_loader = data_loader
+        return self.data_loader
+
+    def __call__(self, seed=0):
+        return self.get_loader()
 
 def get_loader(dataset):
     from dataloader import FewShotDataloader

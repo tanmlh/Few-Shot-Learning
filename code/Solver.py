@@ -10,7 +10,6 @@ from tqdm import tqdm
 
 import utils
 sys.path.append('network/')
-import FeatureModel
 from Omniglot import OmniglotDataset
 from DataLoader import EpisodeLoader
 
@@ -30,7 +29,7 @@ class Solver(object):
         self.model_path = '../model' if 'model_path' not in conf else conf['model_path']
         self.solver_name = conf['solver_name']
         self.max_epoch = 150 if 'max_epoch' not in conf else conf['max_epoch']
-        self.cur_epoch = 0
+        self.cur_epoch = 1
         self.init_networks()
         self.init_best_checkpoint_settings()
         self.init_tensors()
@@ -53,7 +52,7 @@ class Solver(object):
         start_epoch = self.cur_epoch
         train_collector = utils.DataCollector()
         test_collector = utils.DataCollector()
-        for self.cur_epoch in range(start_epoch, self.max_epoch):
+        for self.cur_epoch in range(start_epoch, self.max_epoch + 1):
             self.net.adjust_lr(self.cur_epoch)
             train_state = self.train_epoch(train_loader)
             self.update_checkpoint(self.cur_epoch)
@@ -80,7 +79,7 @@ class Solver(object):
         return state
 
     def load_net_state(self, state):
-        self.cur_epoch = int(state['epoch'])
+        self.cur_epoch = int(state['epoch']) + 1
         self.net.load_net_state(state)
 
     def update_checkpoint(self, cur_epoch):
