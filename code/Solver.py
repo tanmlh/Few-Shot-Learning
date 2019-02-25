@@ -4,7 +4,7 @@ import logging
 import pickle
 
 import torch
-from tensorboardX import SummaryWriter
+# from tensorboardX import SummaryWriter
 import imp
 from tqdm import tqdm
 
@@ -34,7 +34,7 @@ class Solver(object):
         self.init_best_checkpoint_settings()
         self.init_tensors()
         self.load_to_gpu()
-        self.summary_writer = SummaryWriter(log_dir='../runs')
+        # self.summary_writer = SummaryWriter(log_dir='../runs')
 
     def init_networks(self):
         """

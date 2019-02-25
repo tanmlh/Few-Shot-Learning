@@ -114,13 +114,12 @@ if __name__ == '__main__':
     val_pkl_path = '../datasets/mini-imagenet/val.pkl'
     test_pkl_path = '../datasets/mini-imagenet/test.pkl'
 
-    """
+    
     gen_train_val_test_pickle(train_file_path, train_pkl_path)
     gen_train_val_test_pickle(val_file_path, val_pkl_path)
     gen_train_val_test_pickle(test_file_path, test_pkl_path)
-    """
 
-    dataset = MiniImageNetDataset(phase='test')
+    # dataset = MiniImageNetDataset(phase='test')
     """
     train_pkl = pickle.load(open(train_pkl_path, 'rb'))
     val_pkl = pickle.load(open(val_pkl_path, 'rb'))

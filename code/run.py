@@ -38,8 +38,8 @@ if __name__ == '__main__':
         train_dataset = OmniglotDataset(is_train=True)
         test_dataset = OmniglotDataset(is_train=False)
     else:
-        train_dataset = MiniImageNetDataset(phase='train')
-        test_dataset = MiniImageNetDataset(phase='test')
+        train_dataset = MiniImageNetDataset(phase=conf_module.train_split)
+        test_dataset = MiniImageNetDataset(phase=conf_module.test_split)
 
     ## Create the data loader ##
     train_loader = EpisodeLoader(train_dataset, train_episode_param, train_batch_size,

@@ -2,12 +2,18 @@
 
 solver_path = './network/MetaRelationNet.py'
 
+train_split = 'train'
+test_split = 'test'
+
 """ Network Options"""
 net_opt = {}
 net_opt['feature'] = {}
 net_opt['feature']['num_classes'] = 64
 net_opt['feature']['net_name'] = 'WideResNet'
-net_opt['feature']['drop_rate'] = 0.3
+net_opt['feature']['drop_rate'] = 0.0
+net_opt['feature']['widen_factor'] = 10
+net_opt['feature']['depth'] = 28
+net_opt['feature']['avg_pool_size'] = 4
 # net_opt['feature']['pre_trained'] = '../model/pretrain_MiniImageNet_WideResNet/network_best.pkl'
 net_opt['feature']['block'] = False
 
@@ -19,7 +25,7 @@ net_opt['feature']['num_stages'] = 4
 """
 
 net_opt['relation'] = {}
-net_opt['relation']['num_features'] = [512, 128, 64]
+net_opt['relation']['num_features'] = [512 * 4 * 4, 128, 64]
 # net_opt['relation']['num_features'] = [256, 128, 64]
 
 net_opt['use_meta_relation'] = True
@@ -35,10 +41,10 @@ net_opt['decay_ratio'] = 0.8
 
 conf = {};
 # conf['pre_trained'] = '../model/MiniImageNet_MetaRelationNet_5way1shot/network_best.pkl'
-conf['solver_name'] = 'MiniImageNet_MetaRelationNet_5way1shot'
+conf['solver_name'] = 'MiniImageNet_MetaRelationNet_5way1shot_tune1'
 conf['net_path'] = solver_path
 conf['net_opt'] = net_opt
-conf['device_no'] = 0
+conf['device_no'] = 1
 conf['dataset'] = 'miniImageNet'
 conf['max_epoch'] = 200
 

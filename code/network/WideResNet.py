@@ -52,8 +52,9 @@ class WideResNet(nn.Module):
 
         depth = opt['depth'] if 'depth' in opt else 22
         num_classes = opt['num_classes']
-        widen_factor = 8
+        widen_factor = opt['widen_factor']
         dropRate = opt['drop_rate'] if 'drop_rate' in opt else 0.0
+        self.avg_pool_size = opt['avg_pool_size']
 
         nChannels = [16, 16*widen_factor, 32*widen_factor, 64*widen_factor]
         assert((depth - 4) % 6 == 0)
@@ -88,7 +89,7 @@ class WideResNet(nn.Module):
         out = self.block1(out)
         out = self.block2(out)
 
-        feature = F.adaptive_avg_pool2d(out, 1).view(x.size(0), -1)
+        feature = F.adaptive_avg_pool2d(out, self.avg_pool_size).view(x.size(0), -1)
         # feature = F.avg_pool2d(out, 8).view(x.size(0), -1)
 
         out = self.block3(out)

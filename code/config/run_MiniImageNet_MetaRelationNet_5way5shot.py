@@ -2,15 +2,23 @@
 
 solver_path = './network/MetaRelationNet.py'
 
+train_split = 'train'
+test_split = 'test'
+
 """ Network Options"""
 
 """ For wide-residual net """
+avg_pool_size = 1
 net_opt = {}
 net_opt['feature'] = {}
 net_opt['feature']['num_classes'] = 64
 net_opt['feature']['net_name'] = 'WideResNet'
-# net_opt['feature']['pre_trained'] = '../model/pretrain_MiniImageNet_ResNet18/network_best.pkl'
+net_opt['feature']['drop_rate'] = 0.0
+net_opt['feature']['widen_factor'] = 10
+net_opt['feature']['depth'] = 28
+net_opt['feature']['avg_pool_size'] = avg_pool_size
 net_opt['feature']['block'] = False
+# net_opt['feature']['pre_trained'] = '../model/pretrain_MiniImageNet_ResNet18/network_best.pkl'
 
 """
 For four blocks convolutional net
@@ -22,7 +30,7 @@ net_opt['feature']['num_stages'] = 4
 
 
 net_opt['relation'] = {}
-net_opt['relation']['num_features'] = [512, 128, 64]
+net_opt['relation']['num_features'] = [640 * avg_pool_size ** 2, 128, 64]
 # net_opt['relation']['num_features'] = [256, 128, 64]
 
 net_opt['use_meta_relation'] = True
@@ -41,7 +49,7 @@ conf = {};
 conf['solver_name'] = 'MiniImageNet_MetaRelationNet_5way5shot'
 conf['net_path'] = solver_path
 conf['net_opt'] = net_opt
-conf['device_no'] = 1
+conf['device_no'] = 3
 conf['dataset'] = 'miniImageNet'
 conf['max_epoch'] = 150
 epoch_size = 2000
