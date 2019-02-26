@@ -14,9 +14,14 @@ from Omniglot import OmniglotDataset
 from DataLoader import EpisodeLoader
 
 def get_solver_from_pkl(pkl_path):
-    solver_state = pickle.load(open(pkl_path, 'rb'))
-    solver = Solver(solver_state['conf'])
-    solver.load_net_state(solver_state)
+    solver_state = torch.load(open(pkl_path, 'rb'))
+    conf = solver_state['conf']
+    solver_path = conf.solver_conf['solver_path']
+    print('loading solver state from %s...' % (pkl_path))
+    solver = imp.load_source('', solver_path).get_solver(solver_state)
+    # solver = Solver(solver_state['conf'])
+    # solver.load_net_state(solver_state)
+    return solver
 
 
 class Solver(object):
@@ -26,9 +31,13 @@ class Solver(object):
     def __init__(self, conf, *args):
         super(Solver, self).__init__(*args)
         self.conf = conf
-        self.model_path = '../model' if 'model_path' not in conf else conf['model_path']
-        self.solver_name = conf['solver_name']
-        self.max_epoch = 150 if 'max_epoch' not in conf else conf['max_epoch']
+        self.solver_conf = conf['solver_conf']
+        self.net_conf = conf['net_conf']
+        self.loader_conf = conf['loader_conf']
+
+        self.model_path = '../model'
+        self.solver_name = self.solver_conf['solver_name']
+        self.max_epoch = 150 if 'max_epoch' not in self.solver_conf else self.solver_conf['max_epoch']
         self.cur_epoch = 1
         self.init_networks()
         self.init_best_checkpoint_settings()
@@ -40,15 +49,26 @@ class Solver(object):
         """
         Initialize the network model
         """
-        net_path_name = self.conf['net_path']
-        self.net = imp.load_source('', self.conf['net_path']).create_model(self.conf['net_opt'])
+        net_path_name = self.net_conf['net_path']
+        self.net = imp.load_source('', net_path_name).create_model(self.net_conf)
 
     def solve(self, train_loader, test_loader=None):
         """
         Train and test the network model with the given train and test data loader
         """
-        print('Training the network with parameters: ')
-        print(self.conf)
+        print('Training the network with configuration:\n')
+        print('solver configuration:')
+        print(self.solver_conf)
+        print('\n-----------------------------------------\n')
+
+        print('net configuration:')
+        print(self.net_conf)
+        print('\n-----------------------------------------\n')
+
+        print('loader configuration:')
+        print(self.loader_conf)
+        print('\n-----------------------------------------\n')
+
         start_epoch = self.cur_epoch
         train_collector = utils.DataCollector()
         test_collector = utils.DataCollector()
@@ -87,9 +107,9 @@ class Solver(object):
             os.makedirs(os.path.join(self.model_path, self.solver_name))
 
         path = os.path.join(self.model_path, self.solver_name,  'network_' + str(cur_epoch) + '.pkl')
-        net_state = self.get_solver_state()
+        solver_state = self.get_solver_state()
 
-        torch.save(net_state, open(path, 'wb'))
+        torch.save(solver_state, open(path, 'wb'))
 
         old_path_network = os.path.join(self.model_path, self.solver_name, 'network_' + str(cur_epoch-1) + '.pkl')
         if os.path.isfile(old_path_network) and (cur_epoch) % 10 != 0:
@@ -140,7 +160,7 @@ class Solver(object):
         raise NotImplementedError
 
     def load_to_gpu(self):
-        device_no = self.conf['device_no']
+        device_no = self.solver_conf['device_no']
         self.net = self.net.to('cuda:'+str(device_no))
         for key, tensor in self.tensors.items():
             self.tensors[key] = self.tensors[key].to('cuda:'+str(device_no))

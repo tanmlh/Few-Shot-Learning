@@ -47,14 +47,14 @@ class NetworkBlock(nn.Module):
         return self.layer(x)
 
 class WideResNet(nn.Module):
-    def __init__(self, opt):
+    def __init__(self, conf):
         super(WideResNet, self).__init__()
 
-        depth = opt['depth'] if 'depth' in opt else 22
-        num_classes = opt['num_classes']
-        widen_factor = opt['widen_factor']
-        dropRate = opt['drop_rate'] if 'drop_rate' in opt else 0.0
-        self.avg_pool_size = opt['avg_pool_size']
+        depth = conf['depth'] if 'depth' in conf else 22
+        num_classes = conf['num_classes']
+        widen_factor = conf['widen_factor']
+        dropRate = conf['drop_rate'] if 'drop_rate' in conf else 0.0
+        self.avg_pool_size = conf['avg_pool_size']
 
         nChannels = [16, 16*widen_factor, 32*widen_factor, 64*widen_factor]
         assert((depth - 4) % 6 == 0)
@@ -161,18 +161,18 @@ class WideResNetSolver(Solver):
             print('Evaluating epoch %d --> accuracy: %f' % (epoch,
                                                             state['accuracy']))
 
-def create_model(opt):
-    return WideResNetModule(opt)
+def create_model(conf):
+    return WideResNetModule(conf)
 
 class WideResNetModule(BaseModule):
-    def __init__(self, opt, *args):
+    def __init__(self, conf, *args):
         super(WideResNetModule, self).__init__(*args)
-        self.opt = opt
+        self.conf = conf
         self.net = {}
-        self.net['feature'] = WideResNet(opt)
+        self.net['feature'] = WideResNet(conf)
         self.init_optimizer()
-        if 'pre_trained' in opt:
-            state = torch.load(open(opt['pre_trained'], 'rb'))
+        if 'pre_trained' in conf:
+            state = torch.load(open(conf['pre_trained'], 'rb'))
             self.load_net_state(state)
 
     def forward(self, data, labels=None):

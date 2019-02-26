@@ -8,7 +8,7 @@ class BaseModule(torch.nn.Module):
             parameters = filter(lambda x: x.requires_grad, value.parameters())
             if len(parameters) == 0:
                 continue
-            lr = self.opt['lr'] if 'lr' in self.opt else 0.001
+            lr = self.conf['lr'] if 'lr' in self.conf else 0.1
             optimizer[key] = torch.optim.SGD(parameters,
                                              lr=lr, momentum=0.9,
                                              weight_decay=5e-4,
@@ -28,25 +28,25 @@ class BaseModule(torch.nn.Module):
 
     def step(self):
         for key, value in self.optimizer.items():
-            if 'block' not in self.opt[key] or self.opt[key]['block'] is False:
+            if 'block' not in self.conf[key] or self.conf[key]['block'] is False:
                 value.step()
 
     def adjust_lr(self, cur_epoch):
-        if 'LUT_lr' in self.opt:
+        if 'LUT_lr' in self.conf:
             for name, optimizer in self.optimizer.items():
-                for epoch, lr in self.opt['LUT_lr']:
+                for epoch, lr in self.conf['LUT_lr']:
                     if cur_epoch < epoch:
-                        print('learning rate for %s changes to %f' % (name, lr))
+                        print('learning rate for %s net is changed to %f' % (name, lr))
                         for param_group in optimizer.param_groups:
                             param_group['lr'] = lr
                         break
         else:
-            decay_epoch = self.opt['lr_decay_epoch']
-            decay_ratio = self.opt['decay_ratio'] if 'decay_ratio' in self.opt else 0.5
+            decay_epoch = self.conf['lr_decay_epoch']
+            decay_ratio = self.conf['decay_ratio']
             if cur_epoch != 1 and (cur_epoch-1) % decay_epoch == 0:
                 for name, optimizer in self.optimizer.items():
                     for param_group in optimizer.param_groups:
-                        print('learning rate for %s changes to %f' % (name, param_group['lr'] *
+                        print('learning rate for %s net is changed to %f' % (name, param_group['lr'] *
                                                                       decay_ratio))
                         param_group['lr'] = param_group['lr'] * decay_ratio
 

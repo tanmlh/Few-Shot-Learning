@@ -15,17 +15,20 @@ sys.path.append('../')
 from Solver import Solver
 
 def get_solver(conf):
-    if 'pre_trained' in conf:
-        pkl_path = conf['pre_trained']
-        solver_state = torch.load(open(pkl_path, 'rb'))
-        solver = MetaRelationSolver(solver_state['conf'])
-        solver.load_net_state(solver_state)
-        return solver
-    else:
-        return MetaRelationSolver(conf)
+    solver = MetaRelationSolver(conf)
+    return solver
 
-def create_model(opt):
-    return MetaRelationModule(opt)
+def get_solver_from_pkl(solver_state_path):
+    solver_state = torch.load(open(solver_state_path, 'rb'))
+    conf = solver_state['conf']
+    solver = MetaRelationSolver(conf)
+    solver_conf = conf.solver_conf
+    solver.load_net_state(solver_state)
+
+    return solver
+
+def create_model(conf):
+    return MetaRelationModule(conf)
 
 class MetaRelationSolver(Solver):
 
@@ -107,23 +110,24 @@ class MetaRelationSolver(Solver):
                                                                          state['accuracy_classification']))
 
 class MetaRelationModule(BaseModule):
-    def __init__(self, opt, *args):
+    def __init__(self, conf, *args):
         super(MetaRelationModule, self).__init__(*args)
-        self.opt = opt
+        self.conf = conf
         self.net = {}
-        if self.opt['feature']['net_name'] == 'ConvNet':
-            self.net['feature'] = ConvNet.create_model(opt['feature'])
-        elif self.opt['feature']['net_name'] == 'ResNet':
-            self.net['feature'] = ResNet.create_model(opt['feature'])
-        elif self.opt['feature']['net_name'] == 'WideResNet':
-            self.net['feature'] = WideResNet.create_model(opt['feature'])
+        if self.conf['feature']['net_name'] == 'ConvNet':
+            self.net['feature'] = ConvNet.create_model(conf['feature'])
+        elif self.conf['feature']['net_name'] == 'ResNet':
+            self.net['feature'] = ResNet.create_model(conf['feature'])
+        elif self.conf['feature']['net_name'] == 'WideResNet':
+            self.net['feature'] = WideResNet.create_model(conf['feature'])
         else:
             raise NotImplementedError
-        self.net['relation'] = RelationNet(opt['relation'])
-        if opt['use_meta_relation'] is True:
-            self.net['meta_relation'] = MetaRelationNet(opt['meta_relation'])
+
+        self.net['relation'] = RelationNet(conf['relation'])
+        if conf['relation']['use_meta_relation'] is True:
+            self.net['meta_relation'] = MetaRelationNet(conf['meta_relation'])
         else:
-            self.net['meta_relation'] = RelationHead(opt['meta_relation'])
+            self.net['meta_relation'] = RelationHead(conf['meta_relation'])
 
         self.init_optimizer()
 
@@ -162,7 +166,7 @@ class MetaRelationModule(BaseModule):
         # bs * num_query * num_class
         out = self.net['meta_relation'](relation_features, tensors)
         out['loss_classification'] = loss_classification
-        ratio = self.opt['meta_relation']['ratio']
+        ratio = self.conf['meta_relation']['ratio']
 
         out['loss'] = (out['loss_relation'] * ratio[0]
                        + out['loss_symetry'] * ratio[1]
@@ -176,7 +180,7 @@ class MetaRelationModule(BaseModule):
         return out
     """
     def adjust_lr(self, cur_epoch):
-        LUT = self.opt['LUT_lr']
+        LUT = self.conf['LUT_lr']
         if LUT is None:
             LUT = [(2, 0.1), (10, 0.006), (20, 0.0012), (40, 0.00024)]
         for epoch, lr in LUT:
@@ -187,9 +191,9 @@ class MetaRelationModule(BaseModule):
     """
 
 class RelationNet(torch.nn.Module):
-    def __init__(self, opt, *args):
+    def __init__(self, conf, *args):
         super(RelationNet, self).__init__(*args)
-        num_features = opt['num_features']
+        num_features = conf['num_features']
         self.conv_layers = torch.nn.Sequential()
         for i in range(len(num_features)-1):
             self.conv_layers.add_module('rela_conv_{}'.format(i),
@@ -198,7 +202,7 @@ class RelationNet(torch.nn.Module):
                                         nn.BatchNorm1d(num_features[i+1]))
             self.conv_layers.add_module('rela_relu_{}'.format(i),
                                         nn.ReLU(True))
-        self.opt = opt
+        self.conf = conf
         self.initialization()
 
     def forward(self, support_features, query_features, tensors):
@@ -212,7 +216,7 @@ class RelationNet(torch.nn.Module):
         unsqueeze_support = support_features.unsqueeze(1).repeat(1, num_query, 1, 1)
 
         """ Relation calculation """
-        if 'use_euler' in self.opt and self.opt['use_euler'] is True:
+        if 'use_euler' in self.conf and self.conf['use_euler'] is True:
             raw_relations = -torch.norm(unsqueeze_query - unsqueeze_support, p=2, dim=3).pow(2) / query_features.size(-1)
             # relations = torch.bmm(raw_relations, support_labels_one_hot)
             relations = raw_relations.unsqueeze(1)
@@ -245,7 +249,7 @@ class RelationNet(torch.nn.Module):
 
 
 class RelationHead(torch.nn.Module):
-    def __init__(self, opt, *args):
+    def __init__(self, conf, *args):
         super(RelationHead, self).__init__(*args)
 
     def forward(self, relations, tensors):
@@ -273,10 +277,10 @@ class RelationHead(torch.nn.Module):
         return out
 
 class MetaRelationNet(nn.Module):
-    def __init__(self, opt, *args):
+    def __init__(self, conf, *args):
         super(MetaRelationNet, self).__init__(*args)
-        self.opt = opt
-        num_features = opt['num_features']
+        self.conf = conf
+        num_features = conf['num_features']
         self.conv_layers = torch.nn.Sequential()
         for i in range(len(num_features)-1):
             self.conv_layers.add_module('conv_{}'.format(i),
@@ -310,7 +314,7 @@ class MetaRelationNet(nn.Module):
 
         """ Loss Definition """
         ce_loss = nn.CrossEntropyLoss()
-        mse_loss = nn.MSELoss(reduction='elementwise_mean')
+        mse_loss = nn.MSELoss(reduction='mean')
 
         """ Change sample-wise relation to class-wise relation"""
         trans_mat = support_labels_one_hot.unsqueeze(1).repeat(1, num_feature, 1, 1)
@@ -355,11 +359,11 @@ class MetaRelationNet(nn.Module):
         """ Calculate loss w.r.t. overall classification"""
 
         """ Result processing"""
-        opt = self.opt
+        conf = self.conf
         out = {}
-        # out['loss'] = (loss1 * opt['ratio'][0]
-        #                + loss2 * opt['ratio'][1]
-        #                + loss3 * opt['ratio'][2]) / (sum(opt['ratio']))
+        # out['loss'] = (loss1 * conf['ratio'][0]
+        #                + loss2 * conf['ratio'][1]
+        #                + loss3 * conf['ratio'][2]) / (sum(conf['ratio']))
         out['loss_relation'] = loss1
         out['loss_symetry'] = loss2
         out['loss_meta_relation'] = loss3
