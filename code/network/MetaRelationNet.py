@@ -94,18 +94,12 @@ class MetaRelationSolver(Solver):
         cur_state['accuracy_classification'] = out['accuracy_classification']
         return cur_state
 
-    def print_state(self, state, epoch, is_train):
-        if is_train:
-            print('Train %d   --> acc: %f | acc_meta: %f | acc_class %f' % (epoch,
-                                                                            state['accuracy'],
-                                                                            state['accuracy_meta'],
-                                                                            state['accuracy_classification']))
-
-        else:
-            print('Eval %d --> acc: %f | acc_meta: %f | acc_class %f' % (epoch,
-                                                                         state['accuracy'],
-                                                                         state['accuracy_meta'],
-                                                                         state['accuracy_classification']))
+    def print_state(self, state, epoch, phase):
+        print('%s %d   --> acc: %f | acc_meta: %f | acc_class %f' % (phase,
+                                                                     epoch,
+                                                                     state['accuracy'],
+                                                                     state['accuracy_meta'],
+                                                                     state['accuracy_classification']))
 
 class MetaRelationModule(BaseModule):
     def __init__(self, conf, *args):

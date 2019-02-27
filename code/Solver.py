@@ -66,7 +66,7 @@ class Solver(object):
         net_path_name = self.net_conf['net_path']
         self.net = imp.load_source('', net_path_name).create_model(self.net_conf)
 
-    def solve(self, train_loader, test_loader=None):
+    def solve(self, train_loader, test_loader=None, test_loader2=None):
         """
         Train and test the network model with the given train and test data loader
         """
@@ -91,13 +91,17 @@ class Solver(object):
             train_state = self.train_epoch(train_loader)
             self.update_checkpoint(self.cur_epoch)
             train_collector.update(train_state)
-            self.print_state(train_state, self.cur_epoch, True)
+            self.print_state(train_state, self.cur_epoch, 'train')
 
             if test_loader is not None:
                 eval_state = self.eval_epoch(test_loader).average()
                 self.update_best_checkpoint(eval_state, self.cur_epoch)
                 test_collector.update(eval_state)
-                self.print_state(eval_state, self.cur_epoch, False)
+                self.print_state(eval_state, self.cur_epoch, 'eval')
+
+            if test_loader2 is not None:
+                test_state = self.eval_epoch(test_loader2).average()
+                self.print_state(test_state, self.cur_epoch, 'test')
 
         return train_collector, test_collector
 

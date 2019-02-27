@@ -45,14 +45,17 @@ if __name__ == '__main__':
         train_dataset = OmniglotDataset(is_train=True)
         test_dataset = OmniglotDataset(is_train=False)
     elif solver_conf['dataset'] == 'miniImageNet':
-        train_dataset = MiniImageNetDataset(phase=loader_conf['train_split'])
-        test_dataset = MiniImageNetDataset(phase=loader_conf['test_split'])
+        train_dataset = MiniImageNetDataset(phase='train')
+        val_dataset = MiniImageNetDataset(phase='val')
+        test_dataset = MiniImageNetDataset(phase='test')
     else:
         raise NotImplementedError
 
     ## Create the data loader ##
     train_loader = EpisodeLoader(train_dataset, train_episode_param, train_batch_size,
                                  num_workers=6, epoch_size=epoch_size)
+    val_loader = EpisodeLoader(val_dataset, test_episode_param, test_batch_size, num_workers=6,
+                               epoch_size=epoch_size)
     test_loader = EpisodeLoader(test_dataset, test_episode_param, test_batch_size, num_workers=6,
                                 epoch_size=epoch_size)
 
@@ -61,6 +64,6 @@ if __name__ == '__main__':
     # test_loader = get_loader(test_dataset)
 
     ## Train networks ##
-    solver.solve(train_loader, test_loader)
+    solver.solve(train_loader, val_loader, test_loader)
 
 
