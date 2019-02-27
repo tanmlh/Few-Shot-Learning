@@ -18,8 +18,8 @@ net_conf['feature'] = {}
 net_conf['feature']['num_classes'] = 64
 net_conf['feature']['net_name'] = 'WideResNet'
 net_conf['feature']['drop_rate'] = 0.0
-net_conf['feature']['widen_factor'] = 10
-net_conf['feature']['depth'] = 28
+net_conf['feature']['widen_factor'] = 8
+net_conf['feature']['depth'] = 22
 net_conf['feature']['avg_pool_size'] = 4
 net_conf['feature']['block'] = False
 # net_conf['feature']['pre_trained'] = '../model/pretrain_MiniImageNet_WideResNet/network_best.pkl'
@@ -44,7 +44,7 @@ net_conf['meta_relation']['ratio'] = [1, 1, 2, 3]
 
 ## Options for solver
 solver_conf = {}
-solver_conf['solver_name'] = 'MiniImageNet_MetaRelationNet_5way1shot_tune3'
+solver_conf['solver_name'] = 'MiniImageNet_MetaRelationNet_5way1shot_tune1'
 solver_conf['solver_path'] = './network/MetaRelationNet.py'
 solver_conf['net_conf'] = net_conf
 solver_conf['device_no'] = 3
@@ -56,7 +56,7 @@ solver_conf['max_epoch'] = 200
 loader_conf = {}
 
 loader_conf['train_split'] = 'train'
-loader_conf['test_split'] = 'test'
+loader_conf['test_split'] = 'val'
 loader_conf['epoch_size'] = 2000
 
 train_episode_param = {}

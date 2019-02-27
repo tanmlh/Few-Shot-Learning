@@ -16,9 +16,23 @@ from DataLoader import EpisodeLoader
 def get_solver_from_pkl(pkl_path):
     solver_state = torch.load(open(pkl_path, 'rb'))
     conf = solver_state['conf']
-    solver_path = conf.solver_conf['solver_path']
+    solver_path = conf['solver_conf']['solver_path']
     print('loading solver state from %s...' % (pkl_path))
-    solver = imp.load_source('', solver_path).get_solver(solver_state)
+    solver = imp.load_source('', solver_path).get_solver_from_solver_state(solver_state)
+
+    print('configuration from solver state is:\n')
+    print('solver configuration:')
+    print(conf['solver_conf'])
+    print('\n-----------------------------------------\n')
+
+    print('net configuration:')
+    print(conf['net_conf'])
+    print('\n-----------------------------------------\n')
+
+    print('loader configuration:')
+    print(conf['loader_conf'])
+    print('\n-----------------------------------------\n')
+
     # solver = Solver(solver_state['conf'])
     # solver.load_net_state(solver_state)
     return solver

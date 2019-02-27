@@ -18,11 +18,9 @@ def get_solver(conf):
     solver = MetaRelationSolver(conf)
     return solver
 
-def get_solver_from_pkl(solver_state_path):
-    solver_state = torch.load(open(solver_state_path, 'rb'))
+def get_solver_from_solver_state(solver_state):
     conf = solver_state['conf']
     solver = MetaRelationSolver(conf)
-    solver_conf = conf.solver_conf
     solver.load_net_state(solver_state)
 
     return solver
