@@ -69,8 +69,7 @@ class BaseModule(torch.nn.Module):
             if key in state['net_state']:
                 value.load_state_dict(state['net_state'][key])
 
-        for key, value in state['optimizer'].items():
-            self.optimizer[key] = value
+        self.optimizer = state['optimizer']
 
     def parameters(self):
         return self.parameters()

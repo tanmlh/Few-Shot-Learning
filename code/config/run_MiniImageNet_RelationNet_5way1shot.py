@@ -1,46 +1,78 @@
 # RelationNet 5 way 1 shot MiniImageNet
 
-solver_path = './network/MetaRelationNet.py'
+
 
 """ Network Options"""
-net_opt = {}
-net_opt['feature'] = {}
-net_opt['feature']['userelu'] = True;
-net_opt['feature']['in_planes'] = 3
-net_opt['feature']['out_planes'] = [64, 64, 128, 128]
-net_opt['feature']['num_stages'] = 4
 
-net_opt['relation'] = {}
-net_opt['relation']['num_features'] = [6400, 128, 128, 1]
-net_opt['relation']['use_euler'] = False
-net_opt['meta_relation'] = {}
+net_conf = {}
 
-net_opt['use_meta_relation'] = False
-net_opt['img_size'] = (3, 84, 84)
-net_opt['num_ways'] = 5
-net_opt['dataset'] = 'miniImageNet'
-net_opt['lr_decay_epoch'] = 20
-# net_opt['LUT_lr'] = [(10, 0.1), (20, 0.01), (30, 0.001), (40, 0.0001)]
-net_opt['lr'] = 0.01
+## General network options
+net_conf['net_path'] = './network/MetaRelationNet.py'
+net_conf['img_size'] = (3, 84, 84)
+net_conf['lr'] = 0.1
+net_conf['lr_decay_epoch'] = 5
+net_conf['decay_ratio'] = 0.8
 
-conf = {};
-conf['solver_name'] = 'MiniImageNet_RelationNet_5way1shot'
-conf['net_path'] = solver_path
-conf['net_opt'] = net_opt
-conf['device_no'] = 1
-conf['dataset'] = 'miniImageNet'
-# conf['episode_size'] = 2000
-conf['pre_trained'] = {'epoch':100, 'name':'118'}
+## Options for feature extraction network 
+net_conf['feature'] = {}
+net_conf['feature']['num_classes'] = 64
+net_conf['feature']['net_name'] = 'WideResNet'
+net_conf['feature']['drop_rate'] = 0.0
+net_conf['feature']['widen_factor'] = 8
+net_conf['feature']['depth'] = 22
+net_conf['feature']['avg_pool_size'] = 4
+net_conf['feature']['block'] = False
+# net_conf['feature']['pre_trained'] = '../model/pretrain_MiniImageNet_WideResNet/network_best.pkl'
+
+"""
+net_conf['feature']['userelu'] = True;
+net_conf['feature']['in_planes'] = 3
+net_conf['feature']['out_planes'] = [64, 64, 128, 128]
+net_conf['feature']['num_stages'] = 4
+"""
+
+## Options for relation network
+net_conf['relation'] = {}
+net_conf['relation']['num_features'] = [512 * 4 * 4, 128, 64]
+net_conf['relation']['use_meta_relation'] = True
+
+## Options for meta-relation network
+net_conf['meta_relation'] = {}
+net_conf['meta_relation']['num_features'] = [128, 64, 1]
+net_conf['meta_relation']['ratio'] = [1, 0, 0, 1]
+
+
+## Options for solver
+solver_conf = {}
+solver_conf['solver_name'] = 'MiniImageNet_RelationNet_5way1shot_tune1'
+solver_conf['solver_path'] = './network/MetaRelationNet.py'
+solver_conf['net_conf'] = net_conf
+solver_conf['device_no'] = 1
+solver_conf['dataset'] = 'miniImageNet'
+solver_conf['max_epoch'] = 200
+# solver_conf['solver_state__path'] = '../model/MiniImageNet_MetaRelationNet_5way1shot_tune1/network_best.pkl'
+
+## Options for data loader
+loader_conf = {}
+
+loader_conf['train_split'] = 'train'
+loader_conf['test_split'] = 'val'
+loader_conf['epoch_size'] = 2000
 
 train_episode_param = {}
-train_episode_param['nKnovel'] = 5
-train_episode_param['nExemplars'] = 1
-train_episode_param['nTestNovel'] = 30
-train_batch_size = 8
+train_episode_param['num_cats'] = 5
+train_episode_param['num_sup_per_cat'] = 1
+train_episode_param['num_que_per_cat'] = 5
 
 test_episode_param = {}
-test_episode_param['nKnovel'] = 5
-test_episode_param['nExemplars'] = 1
-test_episode_param['nTestNovel'] = 10
-test_batch_size = 8
+test_episode_param['num_cats'] = 5
+test_episode_param['num_sup_per_cat'] = 1
+test_episode_param['num_que_per_cat'] = 5
+
+loader_conf['train_episode_param'] = train_episode_param
+loader_conf['test_episode_param'] = test_episode_param
+loader_conf['train_batch_size'] = 1
+loader_conf['test_batch_size'] = 1
+
+conf = {'net_conf':net_conf, 'solver_conf':solver_conf, 'loader_conf':loader_conf}
 

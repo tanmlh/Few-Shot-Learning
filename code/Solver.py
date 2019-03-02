@@ -66,7 +66,7 @@ class Solver(object):
         net_path_name = self.net_conf['net_path']
         self.net = imp.load_source('', net_path_name).create_model(self.net_conf)
 
-    def solve(self, train_loader, test_loader=None, test_loader2=None):
+    def solve(self, train_loader, val_loader=None, test_loader=None):
         """
         Train and test the network model with the given train and test data loader
         """
@@ -93,14 +93,14 @@ class Solver(object):
             train_collector.update(train_state)
             self.print_state(train_state, self.cur_epoch, 'train')
 
-            if test_loader is not None:
-                eval_state = self.eval_epoch(test_loader).average()
+            if val_loader is not None:
+                eval_state = self.eval_epoch(val_loader).average()
                 self.update_best_checkpoint(eval_state, self.cur_epoch)
                 test_collector.update(eval_state)
                 self.print_state(eval_state, self.cur_epoch, 'eval')
 
-            if test_loader2 is not None:
-                test_state = self.eval_epoch(test_loader2).average()
+            if test_loader is not None:
+                test_state = self.eval_epoch(test_loader).average()
                 self.print_state(test_state, self.cur_epoch, 'test')
 
         return train_collector, test_collector
@@ -186,11 +186,11 @@ class Solver(object):
     def print_state(self, state, epoch, is_train):
         if is_train:
             print('Training   epoch %d   --> loss: %f | accuracy: %f' % (epoch, state['loss'], state['accuracy']))
-            self.summary_writer.add_scalars(os.path.join('log', self.solver_name, 'train_scalars'), state)
+            # self.summary_writer.add_scalars(os.path.join('log', self.solver_name, 'train_scalars'), state)
 
         else:
             print('Evaluating epoch %d --> loss: %f | accuracy: %f' % (epoch, state['loss'], state['accuracy']))
-            self.summary_writer.add_scalars(os.path.join('log', self.solver_name, 'test_scalars'), state)
+            # self.summary_writer.add_scalars(os.path.join('log', self.solver_name, 'test_scalars'), state)
 
     def generate_case(batch):
         pass

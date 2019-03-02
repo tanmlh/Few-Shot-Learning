@@ -54,10 +54,10 @@ if __name__ == '__main__':
 
     ## Test networks ##
     test_state = solver.test(test_loader)
-    print('95% % Confidence Interval for relation: %f% % +- %f% %'
+    print('95% % Confidence Interval for meta-relation: %f% % +- %f% %'
           % (test_state.average()['accuracy'] * 100,
              test_state.confidence_interval()['accuracy'] * 100))
 
-    print('95% % Confidence Interval for meta-relation: %f% % +- %f% %'
-          % (test_state.average()['accuracy_meta'] * 100,
+    print('95% % Confidence Interval for relation: %f% % +- %f% %'
+          % (test_state.average()['accuracy_rela'] * 100,
              test_state.confidence_interval()['accuracy_meta'] * 100))

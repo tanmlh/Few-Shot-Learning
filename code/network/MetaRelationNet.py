@@ -89,17 +89,17 @@ class MetaRelationSolver(Solver):
 
         cur_state = {}
         cur_state['loss'] = out['loss'].item()
-        cur_state['accuracy'] = out['accuracy']
-        cur_state['accuracy_meta'] = out['accuracy_meta']
+        cur_state['accuracy'] = out['accuracy_meta']
+        cur_state['accuracy_rela'] = out['accuracy_rela']
         cur_state['accuracy_classification'] = out['accuracy_classification']
         return cur_state
 
     def print_state(self, state, epoch, phase):
-        print('%s %d   --> acc: %f | acc_meta: %f | acc_class %f' % (phase,
-                                                                     epoch,
-                                                                     state['accuracy'],
-                                                                     state['accuracy_meta'],
-                                                                     state['accuracy_classification']))
+        print('%s %d   --> acc_meta: %f | acc_rela: %f | acc_class %f' % (phase,
+                                                                         epoch,
+                                                                         state['accuracy'],
+                                                                         state['accuracy_rela'],
+                                                                         state['accuracy_classification']))
 
 class MetaRelationModule(BaseModule):
     def __init__(self, conf, *args):
@@ -159,13 +159,11 @@ class MetaRelationModule(BaseModule):
         out = self.net['meta_relation'](relation_features, tensors)
         out['loss_classification'] = loss_classification
         ratio = self.conf['meta_relation']['ratio']
-
         out['loss'] = (out['loss_relation'] * ratio[0]
                        + out['loss_symetry'] * ratio[1]
                        + out['loss_meta_relation'] * ratio[2]
                        + out['loss_classification'] * ratio[3]) / sum(ratio)
 
-        # out['loss'] = out['loss_classification']
 
         out['accuracy_classification'] = accuracy_classification
 
@@ -359,7 +357,7 @@ class MetaRelationNet(nn.Module):
         out['loss_relation'] = loss1
         out['loss_symetry'] = loss2
         out['loss_meta_relation'] = loss3
-        out['accuracy'] = accuracy1
+        out['accuracy_rela'] = accuracy1
         out['accuracy_meta'] = accuracy
 
         return out
