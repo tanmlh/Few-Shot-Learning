@@ -19,7 +19,7 @@ net_conf['feature']['num_classes'] = 64
 net_conf['feature']['net_name'] = 'WideResNet'
 net_conf['feature']['drop_rate'] = 0.0
 net_conf['feature']['widen_factor'] = 10
-net_conf['feature']['depth'] = 16
+net_conf['feature']['depth'] = 28
 net_conf['feature']['avg_pool_size'] = 2
 net_conf['feature']['block'] = False
 # net_conf['feature']['pre_trained'] = '../model/pretrain_MiniImageNet_WideResNet/network_best.pkl'
@@ -33,7 +33,7 @@ net_conf['feature']['num_stages'] = 4
 
 ## Options for relation network
 net_conf['relation'] = {}
-net_conf['relation']['num_features'] = [640 * 2 * 2, 128, 64]
+net_conf['relation']['num_features'] = [256 * 2 * 2, 128, 64]
 net_conf['relation']['use_meta_relation'] = True
 
 ## Options for meta-relation network
@@ -47,7 +47,7 @@ solver_conf = {}
 solver_conf['solver_name'] = 'MiniImageNet_MetaRelationNet_5way1shot_tune1'
 solver_conf['solver_path'] = './network/MetaRelationNet.py'
 solver_conf['net_conf'] = net_conf
-solver_conf['device_no'] = 3
+solver_conf['device_no'] = 0
 solver_conf['dataset'] = 'miniImageNet'
 solver_conf['max_epoch'] = 200
 # solver_conf['solver_state__path'] = '../model/MiniImageNet_MetaRelationNet_5way1shot_tune1/network_best.pkl'

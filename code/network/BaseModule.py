@@ -57,11 +57,16 @@ class BaseModule(torch.nn.Module):
 
     def get_net_state(self):
         net_state = {}
+        optimizer_state = {}
         for key, value in self.net.items():
             net_state[key] = value.state_dict()
+
+        for key, value in self.optimizer.items():
+            optimizer_state[key] = value.state_dict()
+
         state = {}
         state['net_state'] = net_state
-        state['optimizer'] = self.optimizer
+        state['optimizer_state'] = optimizer_state
         return state
 
     def load_net_state(self, state):
@@ -69,7 +74,9 @@ class BaseModule(torch.nn.Module):
             if key in state['net_state']:
                 value.load_state_dict(state['net_state'][key])
 
-        self.optimizer = state['optimizer']
+        for key, value in self.optimizer.items():
+            if key in state['optimizer_state']:
+                value.load_state_dict(state['optimizer_state'][key])
 
     def parameters(self):
         return self.parameters()

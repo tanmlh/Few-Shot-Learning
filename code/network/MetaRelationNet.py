@@ -304,7 +304,7 @@ class MetaRelationNet(nn.Module):
 
         """ Loss Definition """
         ce_loss = nn.CrossEntropyLoss()
-        mse_loss = nn.MSELoss(reduction='mean')
+        mse_loss = nn.MSELoss(reduction='elementwise_mean')
 
         """ Change sample-wise relation to class-wise relation"""
         trans_mat = support_labels_one_hot.unsqueeze(1).repeat(1, num_feature, 1, 1)
