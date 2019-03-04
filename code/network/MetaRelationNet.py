@@ -273,19 +273,19 @@ class MetaRelationNet(nn.Module):
         num_features = conf['num_features']
         self.conv_layers = torch.nn.Sequential()
         for i in range(len(num_features)-1):
-            self.conv_layers.add_module('conv_{}'.format(i),
+            self.conv_layers.add_module('meta_conv_{}'.format(i),
                                         nn.Conv1d(num_features[i], num_features[i+1], 1, 1))
-            self.conv_layers.add_module('bn_{}'.format(i),
+            self.conv_layers.add_module('meta_bn_{}'.format(i),
                                         nn.BatchNorm1d(num_features[i+1]))
             if i != len(num_features)-2:
-                self.conv_layers.add_module('relu_{}'.format(i),
+                self.conv_layers.add_module('meta_relu_{}'.format(i),
                                             nn.ReLU(True))
             else:
-                self.conv_layers.add_module('sigmoid_{}'.format(i),
+                self.conv_layers.add_module('meta_sigmoid_{}'.format(i),
                                             nn.Sigmoid())
         self.conv_layers2 = torch.nn.Sequential()
-        self.conv_layers2.add_module('conv', nn.Conv1d(num_features[0]/2, 1, 1, 1))
-        self.conv_layers2.add_module('sigmoid', nn.Sigmoid())
+        self.conv_layers2.add_module('meta_conv', nn.Conv1d(num_features[0]/2, 1, 1, 1))
+        self.conv_layers2.add_module('meta_sigmoid', nn.Sigmoid())
 
 
     def forward(self, relations, tensors):
