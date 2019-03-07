@@ -94,7 +94,9 @@ class WideResNet(nn.Module):
 
         out = self.block3(out)
         out = self.relu(self.bn1(out))
-        out = F.avg_pool2d(out, 8)
+
+        # out = F.avg_pool2d(out, 8)
+        out = F.adaptive_avg_pool2d(out, self.avg_pool_size)
         out = out.view(x.size(0), -1)
 
         # feature = out
@@ -152,8 +154,8 @@ class WideResNetSolver(Solver):
         cur_state['accuracy'] = out['accuracy']
         return cur_state
 
-    def print_state(self, state, epoch, is_train):
-        if is_train:
+    def print_state(self, state, epoch, phase):
+        if phase == 'train':
             print('Training   epoch %d   --> accuracy: %f' % (epoch,
                                                               state['accuracy']))
 
@@ -169,7 +171,7 @@ class WideResNetModule(BaseModule):
         super(WideResNetModule, self).__init__(*args)
         self.conf = conf
         self.net = {}
-        self.net['feature'] = WideResNet(conf)
+        self.net['feature'] = WideResNet(conf['feature'])
         self.init_optimizer()
         if 'pre_trained' in conf:
             state = torch.load(open(conf['pre_trained'], 'rb'))

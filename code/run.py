@@ -6,6 +6,7 @@ import pickle
 
 from Omniglot import OmniglotDataset
 from MiniImageNet import MiniImageNetDataset
+from FC100 import FC100Dataset
 from dataloader import MiniImageNet
 from DataLoader import EpisodeLoader, get_loader
 import Solver
@@ -48,6 +49,10 @@ if __name__ == '__main__':
         train_dataset = MiniImageNetDataset(phase='train')
         val_dataset = MiniImageNetDataset(phase='val')
         test_dataset = MiniImageNetDataset(phase='test')
+    elif solver_conf['dataset'] == 'FC100':
+        train_dataset = FC100Dataset(phase='train')
+        val_dataset = FC100Dataset(phase='val')
+        test_dataset = FC100Dataset(phase='test')
     else:
         raise NotImplementedError
 

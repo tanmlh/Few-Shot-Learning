@@ -1,4 +1,4 @@
-# MetaRelationNet 5 way 1 shot MiniImageNet
+# MetaRelationNet 5 way 1 shot FC100
 
 
 
@@ -8,14 +8,14 @@ net_conf = {}
 
 ## General network options
 net_conf['net_path'] = './network/MetaRelationNet.py'
-net_conf['img_size'] = (3, 84, 84)
+net_conf['img_size'] = (3, 32, 32)
 net_conf['lr'] = 0.1
 net_conf['lr_decay_epoch'] = 4
 net_conf['decay_ratio'] = 0.8
 
 ## Options for feature extraction network 
 net_conf['feature'] = {}
-net_conf['feature']['num_classes'] = 64
+net_conf['feature']['num_classes'] = 60
 net_conf['feature']['net_name'] = 'WideResNet'
 net_conf['feature']['drop_rate'] = 0.0
 net_conf['feature']['widen_factor'] = 8
@@ -48,7 +48,7 @@ solver_conf['solver_name'] = 'MiniImageNet_MetaRelationNet_5way1shot_WideResNet2
 solver_conf['solver_path'] = './network/MetaRelationNet.py'
 solver_conf['net_conf'] = net_conf
 solver_conf['device_no'] = 1
-solver_conf['dataset'] = 'miniImageNet'
+solver_conf['dataset'] = 'FC100'
 solver_conf['max_epoch'] = 200
 # solver_conf['solver_state__path'] = '../model/MiniImageNet_MetaRelationNet_5way1shot_tune1/network_best.pkl'
 

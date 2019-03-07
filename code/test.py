@@ -60,4 +60,4 @@ if __name__ == '__main__':
 
     print('95% % Confidence Interval for relation: %f% % +- %f% %'
           % (test_state.average()['accuracy_rela'] * 100,
-             test_state.confidence_interval()['accuracy_meta'] * 100))
+             test_state.confidence_interval()['accuracy_rela'] * 100))

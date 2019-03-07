@@ -111,7 +111,7 @@ class MetaRelationModule(BaseModule):
         elif self.conf['feature']['net_name'] == 'ResNet':
             self.net['feature'] = ResNet.create_model(conf['feature'])
         elif self.conf['feature']['net_name'] == 'WideResNet':
-            self.net['feature'] = WideResNet.create_model(conf['feature'])
+            self.net['feature'] = WideResNet.create_model(conf)
         else:
             raise NotImplementedError
 
