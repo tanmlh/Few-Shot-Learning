@@ -50,6 +50,7 @@ class WideResNet(nn.Module):
     def __init__(self, conf):
         super(WideResNet, self).__init__()
 
+        in_channels = conf['in_channels'] if 'in_channels' in conf else 3
         depth = conf['depth'] if 'depth' in conf else 22
         num_classes = conf['num_classes']
         widen_factor = conf['widen_factor']
@@ -61,7 +62,7 @@ class WideResNet(nn.Module):
         n = (depth - 4) / 6
         block = BasicBlock
         # 1st conv before any network block
-        self.conv1 = nn.Conv2d(3, nChannels[0], kernel_size=3, stride=1,
+        self.conv1 = nn.Conv2d(in_channels, nChannels[0], kernel_size=3, stride=1,
                                padding=1, bias=False)
         # 1st block
         self.block1 = NetworkBlock(n, nChannels[0], nChannels[1], block, 1, dropRate)

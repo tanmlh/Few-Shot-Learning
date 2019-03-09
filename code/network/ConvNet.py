@@ -79,12 +79,12 @@ class BasicBlock(nn.Module):
 
 
 class ConvNet(nn.Module):
-    def __init__(self, opt):
+    def __init__(self, conf):
         super(ConvNet, self).__init__()
-        self.in_planes  = opt['in_planes']
-        self.out_planes = opt['out_planes']
-        self.num_stages = opt['num_stages']
-        self.num_classes = opt['num_classes']
+        self.in_planes  = conf['in_planes']
+        self.out_planes = conf['out_planes']
+        self.num_stages = conf['num_stages']
+        self.num_classes = conf['num_classes']
 
 
         if type(self.out_planes) == int:
@@ -92,19 +92,19 @@ class ConvNet(nn.Module):
         assert(type(self.out_planes)==list and len(self.out_planes)==self.num_stages)
 
         num_planes = [self.in_planes,] + self.out_planes
-        userelu = opt['userelu'] if ('userelu' in opt) else True
+        userelu = conf['userelu'] if ('userelu' in conf) else True
 
         conv_blocks = []
         for i in range(self.num_stages):
             if i == (self.num_stages-1):
                 conv_blocks.append(
-                    BasicBlock(num_planes[i], num_planes[i+1]))
+                    ConvBlock(num_planes[i], num_planes[i+1]))
             else:
                 conv_blocks.append(
-                    BasicBlock(num_planes[i], num_planes[i+1]))
+                    ConvBlock(num_planes[i], num_planes[i+1]))
         self.conv_blocks = nn.Sequential(*conv_blocks)
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(num_planes[-1] * 6 * 6, self.num_classes)
+        self.avgpool = nn.AdaptiveAvgPool2d((2))
+        self.fc = nn.Linear(num_planes[-1] * 2 * 2, self.num_classes)
         self.relu = nn.ReLU()
         self.initialization()
 
@@ -120,9 +120,9 @@ class ConvNet(nn.Module):
 
     def forward(self, x):
         x = self.conv_blocks(x)
-        feature = x.view(x.size(0), -1)
+        feature = self.avgpool(x).view(x.size(0), -1)
         class_prob = self.fc(feature)
-        # class_prob = self.relu(class_prob)
+        class_prob = self.relu(class_prob)
 
         out = {'feature':feature, 'class_prob':class_prob}
         return out
@@ -184,22 +184,22 @@ class ConvNetSolver(Solver):
             print('Evaluating epoch %d --> accuracy: %f' % (epoch,
                                                             state['accuracy']))
 
-def create_model(opt=None):
-    if opt is None:
-        opt = {}
-        opt['userelu'] = True; opt['in_planes'] = opt['img_size'][0]
-        opt['out_planes'] = [64, 64, 128, 128]; opt['num_stages'] = 4
-    return ConvNetModule(opt)
+def create_model(conf=None):
+    if conf is None:
+        conf = {}
+        conf['userelu'] = True; conf['in_planes'] = conf['img_size'][0]
+        conf['out_planes'] = [64, 64, 128, 128]; conf['num_stages'] = 4
+    return ConvNetModule(conf)
 
 class ConvNetModule(BaseModule):
-    def __init__(self, opt, *args):
+    def __init__(self, conf, *args):
         super(ConvNetModule, self).__init__(*args)
-        self.opt = opt
+        self.conf = conf
         self.net = {}
-        self.net['feature'] = ConvNet(opt)
+        self.net['feature'] = ConvNet(conf)
         self.init_optimizer()
-        if 'pre_trained' in opt:
-            state = torch.load(open(opt['pre_trained'], 'rb'))
+        if 'pre_trained' in conf:
+            state = torch.load(open(conf['pre_trained'], 'rb'))
             self.load_net_state(state)
 
     def forward(self, data, labels=None):

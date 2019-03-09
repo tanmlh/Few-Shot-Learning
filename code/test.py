@@ -50,7 +50,8 @@ if __name__ == '__main__':
     else:
         raise NotImplementedError
     ## Create the data loader ##
-    test_loader = EpisodeLoader(test_dataset, test_episode_param, test_batch_size, num_workers=6, epoch_size=2000)
+    test_loader = EpisodeLoader(test_dataset, test_episode_param, test_batch_size, num_workers=6,
+                                epoch_size=20000)
 
     ## Test networks ##
     test_state = solver.test(test_loader)

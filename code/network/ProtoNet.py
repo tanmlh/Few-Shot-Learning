@@ -4,7 +4,8 @@ from torch import nn
 
 sys.path.append('./network')
 
-import FeatureModel 
+import ConvNet
+import WideResNet
 import ProtoHead
 from BaseModule import BaseModule
 sys.path.append('../')
@@ -78,14 +79,24 @@ class ProtoSolver(Solver):
 
         return case
 
+    def print_state(self, state, epoch, phase):
+        print('%s %d   --> acc: %f | acc_class %f' % (phase,
+                                                      epoch,
+                                                      state['accuracy'],
+                                                      state['accuracy_classification']))
 
-class ProtoNet(BaseModule):
-    def __init__(self, opt, *args):
-        super(ProtoNet, self).__init__(*args)
-        self.opt = opt
+
+class ProtoNetModule(BaseModule):
+    def __init__(self, conf, *args):
+        super(ProtoNetModule, self).__init__(*args)
+        self.conf = conf
         self.net = {}
-        self.net['feature'] = FeatureModel.create_model(opt['feature_net_opt'])
-        self.net['head'] = ProtoHead.create_model(opt['proto_head_opt'])
+        if conf['feature']['net_name'] == 'WideResNet':
+            self.net['feature'] = WideResNet.create_model(conf)
+        else:
+            self.net['feature'] = ConvNet.create_model(conf['feature'])
+
+        self.net['head'] = ProtoHead.create_model()
         self.init_optimizer()
 
     def forward(self, tensors):
@@ -96,11 +107,13 @@ class ProtoNet(BaseModule):
         support_labels_one_hot = tensors['support_labels_one_hot']
 
         batch_size, num_support, channel, height, weight = support_data.size()
-        support_features = self.net['feature'](support_data.view(batch_size*num_support, channel, height, weight))
+        out = self.net['feature'](support_data.view(batch_size*num_support, channel, height, weight))
+        support_features = out['feature']
         support_features = support_features.view(batch_size, num_support, -1)
 
         batch_size, num_query, channel, height, weight = query_data.size()
-        query_features = self.net['feature'](query_data.view(batch_size*num_query, channel, height, weight))
+        out = self.net['feature'](query_data.view(batch_size*num_query, channel, height, weight))
+        query_features = out['feature']
         query_features = query_features.view(batch_size, num_query, -1)
 
         out_proto = self.net['head'](support_features, support_labels, query_features, query_labels,
@@ -110,7 +123,7 @@ class ProtoNet(BaseModule):
         return out
     """
     def adjust_lr(self, cur_epoch):
-        LUT = self.opt['LUT_lr']
+        LUT = self.conf['LUT_lr']
         if LUT is None:
             LUT = [(2, 0.1), (10, 0.006), (20, 0.0012), (40, 0.00024)]
         for epoch, lr in LUT:
@@ -120,7 +133,5 @@ class ProtoNet(BaseModule):
                 break
     """
 
-def create_model(opt):
-    return ProtoNet(opt)
-
-
+def create_model(conf):
+    return ProtoNetModule(conf)

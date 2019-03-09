@@ -13,6 +13,17 @@ sys.path.append('./')
 import utils
 from DataLoader import EpisodeLoader
 
+def map_label(labels):
+    label_map = {}
+    mapped_labels = []
+    cnt = 0
+    for label in labels:
+        if label not in label_map:
+            label_map[label] = cnt
+            cnt += 1
+        mapped_labels.append(label_map[label])
+    return mapped_labels
+
 class FC100Dataset:
     """
     Return a MiniImageNetDataset dataset object
@@ -47,17 +58,14 @@ class FC100Dataset:
         elif phase == 'pretrain_val':
             self.data = [self.data[i] for i in random_idxes[num_train:]]
             self.labels = [self.labels[i] for i in random_idxes[num_train:]]
-        """
-        elif phase == 'test':
-            temp = [self.labels[i] - 80 for i in range(len(self.labels))]
-            self.labels = temp
-        """
+
+        self.labels = map_label(self.labels)
 
         mean_pix = [x/255.0 for x in [120.39586422, 115.59361427, 104.54012653]]
         std_pix = [x/255.0 for x in [70.68188272, 68.27635443, 72.54505529]]
         normalize_trainsform = transforms.Normalize(mean=mean_pix, std=std_pix)
         if phase == 'train' or phase == 'pretrain_train':
-            trans_list = [transforms.RandomCrop(32, padding=4),
+            trans_list = [transforms.RandomCrop(32, padding=2),
                           transforms.RandomHorizontalFlip(),
                           transforms.ColorJitter(0.1, 0.1, 0.1, 0.1),
                           transforms.ToTensor(),

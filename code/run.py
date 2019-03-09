@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
     if solver_conf['dataset'] == 'omniglot':
         train_dataset = OmniglotDataset(is_train=True)
-        test_dataset = OmniglotDataset(is_train=False)
+        val_dataset = OmniglotDataset(is_train=False)
     elif solver_conf['dataset'] == 'miniImageNet':
         train_dataset = MiniImageNetDataset(phase='train')
         val_dataset = MiniImageNetDataset(phase='val')
@@ -69,6 +69,5 @@ if __name__ == '__main__':
     # test_loader = get_loader(test_dataset)
 
     ## Train networks ##
+    # solver.solve(train_loader, val_loader)
     solver.solve(train_loader, val_loader, test_loader)
-
-
