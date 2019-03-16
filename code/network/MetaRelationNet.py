@@ -7,6 +7,7 @@ sys.path.append('./network')
 import FeatureModel
 import ConvNet
 import ResNet
+import ResNet2
 import WideResNet
 from BaseModule import BaseModule
 
@@ -112,6 +113,8 @@ class MetaRelationModule(BaseModule):
             self.net['feature'] = ResNet.create_model(conf['feature'])
         elif self.conf['feature']['net_name'] == 'WideResNet':
             self.net['feature'] = WideResNet.create_model(conf)
+        elif self.conf['feature']['net_name'] == 'ResNet2':
+            self.net['feature'] = ResNet2.create_model(conf)
         else:
             raise NotImplementedError
 

@@ -18,6 +18,7 @@ if __name__ == '__main__':
     parser.add_argument('--conf_path', dest='conf_path', type=str, help='configure file path', default=None)
     parser.add_argument('--state_path', dest='state_path', type=str,
                         help='pretrained solver state file', default=None)
+    parser.add_argument('--gpu', dest='gpu', type=int, help='gpu', default=0)
 
     args = parser.parse_args()
 
@@ -25,6 +26,7 @@ if __name__ == '__main__':
         solver = Solver.get_solver_from_pkl(args.state_path)
         solver_conf = solver.conf['solver_conf']
         loader_conf = solver.conf['loader_conf']
+        solver_conf['device_no'] = args.gpu
 
     else:
         ## Load parameters ##
@@ -32,6 +34,7 @@ if __name__ == '__main__':
         solver_conf = conf['solver_conf']
         loader_conf = conf['loader_conf']
         solver_path = solver_conf['solver_path']
+        solver_conf['device_no'] = args.gpu
 
         ## Create a solver ##
         solver = imp.load_source('', solver_path).get_solver(conf)

@@ -56,6 +56,7 @@ class WideResNet(nn.Module):
         widen_factor = conf['widen_factor']
         dropRate = conf['drop_rate'] if 'drop_rate' in conf else 0.0
         self.avg_pool_size = conf['avg_pool_size']
+        self.feature_block_no = conf['feature_block_no'] if 'feature_block_no' in conf else 3
 
         nChannels = [16, 16*widen_factor, 32*widen_factor, 64*widen_factor]
         assert((depth - 4) % 6 == 0)
@@ -88,9 +89,15 @@ class WideResNet(nn.Module):
     def forward(self, x):
         out = self.conv1(x)
         out = self.block1(out)
+
+        if self.feature_block_no == 2:
+            feature = F.adaptive_avg_pool2d(out, self.avg_pool_size).view(x.size(0), -1)
+
         out = self.block2(out)
 
-        feature = F.adaptive_avg_pool2d(out, self.avg_pool_size).view(x.size(0), -1)
+        if self.feature_block_no == 3:
+            feature = F.adaptive_avg_pool2d(out, self.avg_pool_size).view(x.size(0), -1)
+
         # feature = F.avg_pool2d(out, 8).view(x.size(0), -1)
 
         out = self.block3(out)
@@ -174,8 +181,9 @@ class WideResNetModule(BaseModule):
         self.net = {}
         self.net['feature'] = WideResNet(conf['feature'])
         self.init_optimizer()
-        if 'pre_trained' in conf:
-            state = torch.load(open(conf['pre_trained'], 'rb'))
+        if 'pre_trained' in conf['feature']:
+            state = torch.load(open(conf['feature']['pre_trained'], 'rb'))
+            print('loading pretrained network parameters...')
             self.load_net_state(state)
 
     def forward(self, data, labels=None):

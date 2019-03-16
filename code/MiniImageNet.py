@@ -67,10 +67,10 @@ class MiniImageNetDataset:
         self.data = pkl['data']
         self.labels = pkl['labels']
         """
-
+        random.seed(2019)
         random_idxes = range(len(self.data))
         random.shuffle(random_idxes)
-        num_train = int(len(self.data) * 0.8)
+        num_train = int(len(self.data) * 0.9)
         if phase == 'pretrain_train':
             self.data = [self.data[i] for i in random_idxes[:num_train]]
             self.labels = [self.labels[i] for i in random_idxes[:num_train]]
