@@ -89,7 +89,7 @@ class MiniImageNetDataset:
         if phase == 'train' or phase == 'pretrain_train':
             trans_list = [transforms.RandomCrop(84, padding=8),
                           transforms.RandomHorizontalFlip(),
-                          transforms.ColorJitter(0.1, 0.1, 0.1, 0.1),
+                          transforms.ColorJitter(0.05, 0.05, 0.05, 0.05),
                           transforms.ToTensor(),
                           normalize_trainsform]
         else:

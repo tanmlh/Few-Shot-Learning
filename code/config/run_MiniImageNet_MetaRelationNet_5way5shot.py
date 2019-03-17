@@ -19,7 +19,7 @@ net_conf['feature']['num_classes'] = 64
 net_conf['feature']['net_name'] = 'WideResNet'
 net_conf['feature']['drop_rate'] = 0.0
 net_conf['feature']['widen_factor'] = 4
-net_conf['feature']['depth'] = 28
+net_conf['feature']['depth'] = 46
 net_conf['feature']['avg_pool_size'] = 2
 net_conf['feature']['block'] = False
 net_conf['feature']['feature_block_no'] = 3
@@ -45,7 +45,7 @@ net_conf['meta_relation']['ratio'] = [1, 1, 1, 2]
 
 ## Options for solver
 solver_conf = {}
-solver_conf['solver_name'] = 'MiniImageNet_MetaRelationNet_5way5shot_WideResNet2804_1112'
+solver_conf['solver_name'] = 'MiniImageNet_MetaRelationNet_5way5shot_WideResNet4604_1112'
 solver_conf['solver_path'] = './network/MetaRelationNet.py'
 solver_conf['net_conf'] = net_conf
 solver_conf['device_no'] = 1

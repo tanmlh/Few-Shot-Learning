@@ -162,10 +162,15 @@ class MetaRelationModule(BaseModule):
         out = self.net['meta_relation'](relation_features, tensors)
         out['loss_classification'] = loss_classification
         ratio = self.conf['meta_relation']['ratio']
-        out['loss'] = (out['loss_relation'] * ratio[0]
-                       + out['loss_symetry'] * ratio[1]
-                       + out['loss_meta_relation'] * ratio[2]
-                       + out['loss_classification'] * ratio[3]) / sum(ratio)
+        if ratio[0] == 0:
+            out['loss'] = (out['loss_symetry'] * ratio[1]
+                           + out['loss_meta_relation'] * ratio[2]
+                           + out['loss_classification'] * ratio[3]) / sum(ratio)
+        else:
+            out['loss'] = (out['loss_relation'] * ratio[0]
+                           + out['loss_symetry'] * ratio[1]
+                           + out['loss_meta_relation'] * ratio[2]
+                           + out['loss_classification'] * ratio[3]) / sum(ratio)
 
 
         out['accuracy_classification'] = accuracy_classification

@@ -40,15 +40,15 @@ net_conf['relation']['use_meta_relation'] = True
 ## Options for meta-relation network
 net_conf['meta_relation'] = {}
 net_conf['meta_relation']['num_features'] = [128, 64, 1]
-net_conf['meta_relation']['ratio'] = [1, 1, 1, 2]
+net_conf['meta_relation']['ratio'] = [0, 1, 1, 2]
 
 
 ## Options for solver
 solver_conf = {}
-solver_conf['solver_name'] = 'MiniImageNet_MetaRelationNet_5way1shot_WideResNet4604_1112'
+solver_conf['solver_name'] = 'MiniImageNet_MetaRelationNet_5way1shot_WideResNet4604_0112'
 solver_conf['solver_path'] = './network/MetaRelationNet.py'
 solver_conf['net_conf'] = net_conf
-solver_conf['device_no'] = 1
+solver_conf['device_no'] = 2
 solver_conf['dataset'] = 'miniImageNet'
 solver_conf['max_epoch'] = 200
 # solver_conf['solver_state__path'] = '../model/MiniImageNet_MetaRelationNet_5way1shot_tune1/network_best.pkl'
