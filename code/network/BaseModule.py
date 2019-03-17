@@ -28,7 +28,7 @@ class BaseModule(torch.nn.Module):
 
     def step(self):
         for key, value in self.optimizer.items():
-            if 'block' not in self.conf[key] or self.conf[key]['block'] is False:
+            if 'freeze' not in self.conf[key] or self.conf[key]['freeze'] is False:
                 value.step()
 
     def adjust_lr(self, cur_epoch):

@@ -55,8 +55,8 @@ class WideResNet(nn.Module):
         num_classes = conf['num_classes']
         widen_factor = conf['widen_factor']
         dropRate = conf['drop_rate'] if 'drop_rate' in conf else 0.0
-        self.avg_pool_size = conf['avg_pool_size']
-        self.feature_block_no = conf['feature_block_no'] if 'feature_block_no' in conf else 3
+        self.avg_pool_size1 = conf['avg_pool_size1']
+        self.avg_pool_size2 = conf['avg_pool_size2']
 
         nChannels = [16, 16*widen_factor, 32*widen_factor, 64*widen_factor]
         assert((depth - 4) % 6 == 0)
@@ -74,7 +74,7 @@ class WideResNet(nn.Module):
         # global average pooling and classifier
         self.bn1 = nn.BatchNorm2d(nChannels[3])
         self.relu = nn.ReLU(inplace=True)
-        self.fc = nn.Linear(nChannels[3] * self.avg_pool_size ** 2, num_classes)
+        self.fc = nn.Linear(nChannels[3] * self.avg_pool_size2 ** 2, num_classes)
         self.nChannels = nChannels[3]
 
         for m in self.modules():
@@ -89,22 +89,15 @@ class WideResNet(nn.Module):
     def forward(self, x):
         out = self.conv1(x)
         out = self.block1(out)
-
-        if self.feature_block_no == 2:
-            feature = F.adaptive_avg_pool2d(out, self.avg_pool_size).view(x.size(0), -1)
-
         out = self.block2(out)
 
-        if self.feature_block_no == 3:
-            feature = F.adaptive_avg_pool2d(out, self.avg_pool_size).view(x.size(0), -1)
-
-        # feature = F.avg_pool2d(out, 8).view(x.size(0), -1)
+        feature = F.adaptive_avg_pool2d(out, self.avg_pool_size1).view(x.size(0), -1)
+        # feature = F.avg_pool2d(out, 11).view(x.size(0), -1)
 
         out = self.block3(out)
         out = self.relu(self.bn1(out))
-
-        # out = F.avg_pool2d(out, 8)
-        out = F.adaptive_avg_pool2d(out, self.avg_pool_size)
+        # out = F.avg_pool2d(out, self.avg_pool_size2)
+        out = F.adaptive_avg_pool2d(out, self.avg_pool_size2)
         out = out.view(x.size(0), -1)
 
         # feature = out
