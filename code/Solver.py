@@ -134,22 +134,23 @@ class Solver(object):
             os.remove(old_path_network)
 
     def init_best_checkpoint_settings(self):
-        self.best_metric_name = 'accuracy'
-        self.max_eval_metric = None
+        self.best_metric_name = self.solver_conf['index_names']
+        self.max_eval_metric = {}
         self.best_epoch = None
         self.best_eval_result = None
 
     def update_best_checkpoint(self, eval_result, cur_epoch):
-        assert self.best_metric_name in eval_result.keys()
-        cur_eval_metric = eval_result[self.best_metric_name]
-        if cur_eval_metric >= self.max_eval_metric or self.max_eval_metric is None:
-            self.max_eval_metric = cur_eval_metric
-            self.best_epoch = cur_epoch
-            self.best_eval_result = eval_result
+        for index_name in self.best_metric_name:
+            assert index_name in eval_result.keys()
+            cur_eval_metric = eval_result[index_name]
+            if index_name not in self.max_eval_metric or cur_eval_metric >= self.max_eval_metric[index_name]:
+                self.max_eval_metric[index_name] = cur_eval_metric
+                self.best_epoch = cur_epoch
+                self.best_eval_result = eval_result
 
-            path = os.path.join(self.model_path, self.solver_name, 'network_best.pkl')
-            net_state = self.get_solver_state()
-            torch.save(net_state, open(path, 'wb'))
+                path = os.path.join(self.model_path, self.solver_name, 'network_best_' + index_name + '.pkl')
+                net_state = self.get_solver_state()
+                torch.save(net_state, open(path, 'wb'))
 
     def train_epoch(self, train_loader):
         collector = utils.DataCollector()

@@ -41,8 +41,11 @@ class MetaRelationSolver(Solver):
         tensors['support_labels_one_hot'] = torch.FloatTensor()
         tensors['query_data'] = torch.FloatTensor()
         tensors['query_labels'] = torch.LongTensor()
+        tensors['query_labels_one_hot'] = torch.FloatTensor()
         tensors['query_labels_real'] = torch.LongTensor()
         tensors['all_ones'] = torch.FloatTensor()
+        tensors['M_labels_row'] = torch.FloatTensor()
+        tensors['M_labels_col'] = torch.FloatTensor()
         self.tensors = tensors
 
     def set_tensors(self, batch):
@@ -63,12 +66,21 @@ class MetaRelationSolver(Solver):
 
         self.tensors['all_ones'].resize_(batch_size, num_query * num_class *
                                          num_class).fill_(1).to(support_data.device)
+        self.tensors['M_labels_row'].resize_(batch_size * num_query, num_class).fill_(1)
+        self.tensors['M_labels_row'].scatter_(1, self.tensors['query_labels'].view(batch_size*num_query, 1), 0.5)
+        self.tensors['M_labels_col'].resize_(batch_size * num_query, num_class).fill_(0)
+        self.tensors['M_labels_col'].scatter_(1, self.tensors['query_labels'].view(batch_size*num_query, 1), 0.5)
 
         # one hot labels for support data
         one_hot_size = list(support_labels.size()) + [num_class,]
         labels_unsqueeze = self.tensors['support_labels'].unsqueeze(support_labels.dim())
         self.tensors['support_labels_one_hot'].resize_(one_hot_size). \
             fill_(0).scatter_(support_labels.dim(), labels_unsqueeze, 1)
+
+        one_hot_size = list(query_labels.size()) + [num_class,]
+        labels_unsqueeze = self.tensors['query_labels'].unsqueeze(query_labels.dim())
+        self.tensors['query_labels_one_hot'].resize_(one_hot_size). \
+            fill_(0).scatter_(query_labels.dim(), labels_unsqueeze, 1)
 
     def process_batch(self, batch, is_train):
         """
@@ -162,16 +174,17 @@ class MetaRelationModule(BaseModule):
         out = self.net['meta_relation'](relation_features, tensors)
         out['loss_classification'] = loss_classification
         ratio = self.conf['meta_relation']['ratio']
-        if ratio[0] == 0:
-            out['loss'] = (out['loss_symetry'] * ratio[1]
-                           + out['loss_meta_relation'] * ratio[2]
-                           + out['loss_classification'] * ratio[3]) / sum(ratio)
-        else:
-            out['loss'] = (out['loss_relation'] * ratio[0]
-                           + out['loss_symetry'] * ratio[1]
-                           + out['loss_meta_relation'] * ratio[2]
-                           + out['loss_classification'] * ratio[3]) / sum(ratio)
+        out['loss'] = 0
+        if ratio[0] != 0:
+            out['loss'] += out['loss_relation'] * ratio[0]
+        if ratio[1] != 0:
+            out['loss'] += out['loss_symetry'] * ratio[1]
+        if ratio[2] != 0:
+            out['loss'] += out['loss_meta_relation'] * ratio[2]
+        if ratio[3] != 0:
+            out['loss'] += out['loss_classification'] * ratio[3]
 
+        out['loss'] /= sum(ratio)
 
         out['accuracy_classification'] = accuracy_classification
 
@@ -339,6 +352,15 @@ class MetaRelationNet(nn.Module):
         meta_relation = self.conv_layers(raw_meta_relation)
         meta_relation = meta_relation.view(batch_size, num_query, num_class, num_class)
 
+        M = meta_relation.view(batch_size * num_query, num_class, num_class)
+        M_score_row = torch.bmm(tensors['query_labels_one_hot'].view(batch_size*num_query, 1, num_class),
+                                M).view(batch_size*num_query, num_class)
+        M_score_col = torch.bmm(M, tensors['query_labels_one_hot'].view(batch_size*num_query, num_class, 1))\
+                                .view(batch_size*num_query, num_class)
+
+        loss4 = mse_loss(M_score_row, tensors['M_labels_row']) \
+                + mse_loss(M_score_col, tensors['M_labels_col'])
+
         # to ensure the antisymmetry of relation, the sum of meta_relation and meta_relation_transpose
         # should be close to ones
         meta_relation_transpose = meta_relation.transpose(2, 3)
@@ -364,7 +386,7 @@ class MetaRelationNet(nn.Module):
         #                + loss3 * conf['ratio'][2]) / (sum(conf['ratio']))
         out['loss_relation'] = loss1
         out['loss_symetry'] = loss2
-        out['loss_meta_relation'] = loss3
+        out['loss_meta_relation'] = loss4
         out['accuracy_rela'] = accuracy1
         out['accuracy_meta'] = accuracy
 
