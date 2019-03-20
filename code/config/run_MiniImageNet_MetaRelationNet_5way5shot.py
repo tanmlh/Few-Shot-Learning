@@ -19,10 +19,10 @@ net_conf['feature']['num_classes'] = 64
 net_conf['feature']['net_name'] = 'WideResNet'
 net_conf['feature']['drop_rate'] = 0.0
 net_conf['feature']['widen_factor'] = 4
-net_conf['feature']['depth'] = 46
-net_conf['feature']['avg_pool_size'] = 2
-net_conf['feature']['block'] = False
-net_conf['feature']['feature_block_no'] = 3
+net_conf['feature']['depth'] = 40
+net_conf['feature']['avg_pool_size1'] = 5
+net_conf['feature']['avg_pool_size2'] = 2
+net_conf['feature']['freeze'] = False
 # net_conf['feature']['pre_trained'] = '../model/pretrain_MiniImageNet_WideResNet3404/network_best.pkl'
 
 """
@@ -34,7 +34,7 @@ net_conf['feature']['num_stages'] = 4
 
 ## Options for relation network
 net_conf['relation'] = {}
-net_conf['relation']['num_features'] = [256 * 2 * 2, 128, 64]
+net_conf['relation']['num_features'] = [256 * 5 * 5, 128, 64]
 net_conf['relation']['use_meta_relation'] = True
 
 ## Options for meta-relation network
@@ -45,12 +45,13 @@ net_conf['meta_relation']['ratio'] = [1, 1, 1, 2]
 
 ## Options for solver
 solver_conf = {}
-solver_conf['solver_name'] = 'MiniImageNet_MetaRelationNet_5way5shot_WideResNet4604_1112'
+solver_conf['solver_name'] = 'MiniImageNet_MetaRelationNet_5way5shot_WideResNet4004_1112'
 solver_conf['solver_path'] = './network/MetaRelationNet.py'
 solver_conf['net_conf'] = net_conf
 solver_conf['device_no'] = 1
 solver_conf['dataset'] = 'miniImageNet'
 solver_conf['max_epoch'] = 200
+solver_conf['index_names'] = ['accuracy', 'accuracy_rela']
 # solver_conf['solver_state__path'] = '../model/MiniImageNet_MetaRelationNet_5way1shot_tune1/network_best.pkl'
 
 ## Options for data loader
