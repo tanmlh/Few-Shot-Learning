@@ -18,7 +18,7 @@ net_conf['feature']['num_classes'] = 64
 net_conf['feature']['net_name'] = 'WideResNet'
 net_conf['feature']['drop_rate'] = 0.0
 net_conf['feature']['widen_factor'] = 4
-net_conf['feature']['depth'] = 10
+net_conf['feature']['depth'] = 40
 net_conf['feature']['avg_pool_size1'] = 5
 net_conf['feature']['avg_pool_size2'] = 2
 net_conf['feature']['block'] = False
@@ -40,7 +40,7 @@ net_conf['feature']['num_stages'] = 4
 
 ## Options for solver
 solver_conf = {}
-solver_conf['solver_name'] = 'MiniImageNet_ProtoNet_5way1shot_WideResNet1004'
+solver_conf['solver_name'] = 'MiniImageNet_ProtoNet_5way1shot_WideResNet4004'
 solver_conf['solver_path'] = './network/ProtoNet.py'
 solver_conf['net_conf'] = net_conf
 solver_conf['device_no'] = 0

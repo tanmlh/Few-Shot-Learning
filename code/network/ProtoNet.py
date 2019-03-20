@@ -14,6 +14,13 @@ from Solver import Solver
 def get_solver(conf):
     return ProtoSolver(conf)
 
+def get_solver_from_solver_state(solver_state):
+    conf = solver_state['conf']
+    solver = ProtoSolver(conf)
+    solver.load_net_state(solver_state)
+
+    return solver
+
 class ProtoSolver(Solver):
     def __init__(self, *args):
         super(ProtoSolver, self).__init__(*args)

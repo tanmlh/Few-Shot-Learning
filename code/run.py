@@ -6,6 +6,7 @@ import pickle
 
 from Omniglot import OmniglotDataset
 from MiniImageNet import MiniImageNetDataset
+from TieredImageNet import TieredImageNetDataset
 from FC100 import FC100Dataset
 from dataloader import MiniImageNet
 from DataLoader import EpisodeLoader, get_loader
@@ -45,6 +46,8 @@ if __name__ == '__main__':
     test_batch_size = loader_conf['test_batch_size']
     epoch_size = loader_conf['epoch_size']
 
+    test_dataset = None
+
     if solver_conf['dataset'] == 'omniglot':
         train_dataset = OmniglotDataset(is_train=True)
         val_dataset = OmniglotDataset(is_train=False)
@@ -56,6 +59,11 @@ if __name__ == '__main__':
         train_dataset = FC100Dataset(phase='train')
         val_dataset = FC100Dataset(phase='val')
         test_dataset = FC100Dataset(phase='test')
+    elif solver_conf['dataset'] == 'tieredImageNet':
+        train_dataset = TieredImageNetDataset(phase='train')
+        val_dataset = TieredImageNetDataset(phase='val')
+        # test_dataset = TieredImageNetDataset(phase='test')
+
     else:
         raise NotImplementedError
 
@@ -63,9 +71,10 @@ if __name__ == '__main__':
     train_loader = EpisodeLoader(train_dataset, train_episode_param, train_batch_size,
                                  num_workers=6, epoch_size=epoch_size)
     val_loader = EpisodeLoader(val_dataset, test_episode_param, test_batch_size, num_workers=6,
-                               epoch_size=epoch_size)
-    test_loader = EpisodeLoader(test_dataset, test_episode_param, test_batch_size, num_workers=6,
-                                epoch_size=epoch_size)
+                                 epoch_size=epoch_size)
+    if test_dataset is not None:
+        test_loader = EpisodeLoader(test_dataset, test_episode_param, test_batch_size, num_workers=6,
+                                    epoch_size=epoch_size)
 
     # temp = next(iter(train_loader(0)))
     # train_loader = get_loader(train_dataset)
