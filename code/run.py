@@ -46,7 +46,7 @@ if __name__ == '__main__':
     test_batch_size = loader_conf['test_batch_size']
     epoch_size = loader_conf['epoch_size']
 
-    test_dataset = None
+    test_loader = None
 
     if solver_conf['dataset'] == 'omniglot':
         train_dataset = OmniglotDataset(is_train=True)
