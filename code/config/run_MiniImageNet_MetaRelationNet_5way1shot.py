@@ -45,7 +45,7 @@ net_conf['meta_relation']['ratio'] = [1, 1, 1, 2]
 
 ## Options for solver
 solver_conf = {}
-solver_conf['solver_name'] = 'MiniImageNet_MetaRelationNet_5way1shot_WideResNet4004_1112_1'
+solver_conf['solver_name'] = 'MiniImageNet_MetaRelationNet_5way1shot_WideResNet4004_1112_0.8'
 solver_conf['solver_path'] = './network/MetaRelationNet.py'
 solver_conf['net_conf'] = net_conf
 solver_conf['device_no'] = 1

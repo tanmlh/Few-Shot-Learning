@@ -66,9 +66,9 @@ class MetaRelationSolver(Solver):
 
         self.tensors['all_ones'].resize_(batch_size, num_query * num_class *
                                          num_class).fill_(1).to(support_data.device)
-        self.tensors['M_labels_row'].resize_(batch_size * num_query, num_class).fill_(1)
+        self.tensors['M_labels_row'].resize_(batch_size * num_query, num_class).fill_(0.8)
         self.tensors['M_labels_row'].scatter_(1, self.tensors['query_labels'].view(batch_size*num_query, 1), 0.5)
-        self.tensors['M_labels_col'].resize_(batch_size * num_query, num_class).fill_(0)
+        self.tensors['M_labels_col'].resize_(batch_size * num_query, num_class).fill_(0.2)
         self.tensors['M_labels_col'].scatter_(1, self.tensors['query_labels'].view(batch_size*num_query, 1), 0.5)
 
         # one hot labels for support data
@@ -353,13 +353,27 @@ class MetaRelationNet(nn.Module):
         meta_relation = meta_relation.view(batch_size, num_query, num_class, num_class)
 
         M = meta_relation.view(batch_size * num_query, num_class, num_class)
+
+
         M_score_row = torch.bmm(tensors['query_labels_one_hot'].view(batch_size*num_query, 1, num_class),
                                 M).view(batch_size*num_query, num_class)
+        M_labels_row = tensors['M_labels_row']
+        mask_row = M_score_row < M_labels_row
+        score_row = torch.masked_select(M_score_row, mask_row)
+        labels_row = torch.masked_select(M_labels_row, mask_row)
+
+
         M_score_col = torch.bmm(M, tensors['query_labels_one_hot'].view(batch_size*num_query, num_class, 1))\
                                 .view(batch_size*num_query, num_class)
+        M_labels_col = tensors['M_labels_col']
+        mask_col = M_score_col > M_labels_col
+        score_col = torch.masked_select(M_score_col, mask_col)
+        labels_col = torch.masked_select(M_labels_col, mask_col)
 
-        loss4 = mse_loss(M_score_row, tensors['M_labels_row']) \
-                + mse_loss(M_score_col, tensors['M_labels_col'])
+
+
+        loss4 = mse_loss(score_row, labels_row) \
+                + mse_loss(score_col, labels_col)
 
         # to ensure the antisymmetry of relation, the sum of meta_relation and meta_relation_transpose
         # should be close to ones
