@@ -51,6 +51,7 @@ solver_conf['net_conf'] = net_conf
 solver_conf['device_no'] = 0
 solver_conf['dataset'] = 'tieredImageNet'
 solver_conf['max_epoch'] = 300
+solver_conf['index_names'] = ['accuracy', 'accuracy_rela']
 
 ## Options for data loader
 loader_conf = {}
