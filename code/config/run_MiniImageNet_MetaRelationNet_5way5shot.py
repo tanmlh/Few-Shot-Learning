@@ -22,8 +22,8 @@ net_conf['feature']['widen_factor'] = 4
 net_conf['feature']['depth'] = 40
 net_conf['feature']['avg_pool_size1'] = 5
 net_conf['feature']['avg_pool_size2'] = 2
-net_conf['feature']['freeze'] = False
-# net_conf['feature']['pre_trained'] = '../model/pretrain_MiniImageNet_WideResNet3404/network_best.pkl'
+net_conf['feature']['freeze'] = True
+net_conf['feature']['pre_trained'] = '../model/pretrain_MiniImageNet_WideResNet4004/network_best_accuracy.pkl'
 
 """
 net_conf['feature']['userelu'] = True;
