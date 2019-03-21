@@ -55,11 +55,11 @@ if __name__ == '__main__':
     elif solver_conf['dataset'] == 'miniImageNet':
         train_dataset = MiniImageNetDataset(phase='train')
         val_dataset = MiniImageNetDataset(phase='val')
-        test_dataset = MiniImageNetDataset(phase='test')
+        # test_dataset = MiniImageNetDataset(phase='test')
     elif solver_conf['dataset'] == 'FC100':
         train_dataset = FC100Dataset(phase='train')
         val_dataset = FC100Dataset(phase='val')
-        test_dataset = FC100Dataset(phase='test')
+        # test_dataset = FC100Dataset(phase='test')
     elif solver_conf['dataset'] == 'tieredImageNet':
         train_dataset = TieredImageNetDataset(phase='train')
         val_dataset = TieredImageNetDataset(phase='val')

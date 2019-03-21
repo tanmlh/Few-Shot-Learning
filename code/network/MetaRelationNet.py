@@ -358,22 +358,22 @@ class MetaRelationNet(nn.Module):
         M_score_row = torch.bmm(tensors['query_labels_one_hot'].view(batch_size*num_query, 1, num_class),
                                 M).view(batch_size*num_query, num_class)
         M_labels_row = tensors['M_labels_row']
-        mask_row = M_score_row < M_labels_row
-        score_row = torch.masked_select(M_score_row, mask_row)
-        labels_row = torch.masked_select(M_labels_row, mask_row)
+        # mask_row = M_score_row < M_labels_row
+        # score_row = torch.masked_select(M_score_row, mask_row)
+        # labels_row = torch.masked_select(M_labels_row, mask_row)
 
 
         M_score_col = torch.bmm(M, tensors['query_labels_one_hot'].view(batch_size*num_query, num_class, 1))\
                                 .view(batch_size*num_query, num_class)
         M_labels_col = tensors['M_labels_col']
-        mask_col = M_score_col > M_labels_col
-        score_col = torch.masked_select(M_score_col, mask_col)
-        labels_col = torch.masked_select(M_labels_col, mask_col)
+        # mask_col = M_score_col > M_labels_col
+        # score_col = torch.masked_select(M_score_col, mask_col)
+        # labels_col = torch.masked_select(M_labels_col, mask_col)
 
 
 
-        loss4 = mse_loss(score_row, labels_row) \
-                + mse_loss(score_col, labels_col)
+        # loss4 = mse_loss(score_row, labels_row) + mse_loss(score_col, labels_col)
+        loss4 = mse_loss(M_score_row, M_labels_row) + mse_loss(M_score_col, M_labels_col)
 
         # to ensure the antisymmetry of relation, the sum of meta_relation and meta_relation_transpose
         # should be close to ones
