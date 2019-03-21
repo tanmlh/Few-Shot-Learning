@@ -46,7 +46,7 @@ net_conf['meta_relation']['ratio'] = [1, 1, 1, 2]
 
 ## Options for solver
 solver_conf = {}
-solver_conf['solver_name'] = 'Omniglot_MetaRelationNet_5way1shot_WideResNet4004_1112'
+solver_conf['solver_name'] = 'Omniglot_MetaRelationNet_5way5shot_WideResNet4004_1112'
 solver_conf['solver_path'] = './network/MetaRelationNet.py'
 solver_conf['net_conf'] = net_conf
 solver_conf['device_no'] = 0
@@ -64,12 +64,12 @@ loader_conf['epoch_size'] = 2000
 
 train_episode_param = {}
 train_episode_param['num_cats'] = 5
-train_episode_param['num_sup_per_cat'] = 1
+train_episode_param['num_sup_per_cat'] = 5
 train_episode_param['num_que_per_cat'] = 5
 
 test_episode_param = {}
 test_episode_param['num_cats'] = 5
-test_episode_param['num_sup_per_cat'] = 1
+test_episode_param['num_sup_per_cat'] = 5
 test_episode_param['num_que_per_cat'] = 5
 
 loader_conf['train_episode_param'] = train_episode_param
